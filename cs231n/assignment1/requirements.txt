@@ -1,6 +1,5 @@
 Jinja2==2.8
 MarkupSafe==0.23
-Pillow==3.0.0
 Pygments==2.0.2
 appnope==0.1.0
 backports-abc==0.4
@@ -42,5 +41,4 @@ terminado==0.5
 tornado==4.3
 traitlets==4.0.0
 wsgiref==0.1.2
-jupyter==1.0.0
 pillow==3.1.0
