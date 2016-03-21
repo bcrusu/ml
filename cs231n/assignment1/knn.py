@@ -10,12 +10,12 @@ plt.interactive(False)
 X_train, y_train, X_test, y_test = load_CIFAR10('./cs231n/datasets/cifar-10-batches-py')
 
 # Subsample the data for more efficient code execution in this exercise
-num_training = 5000
+num_training = 100
 mask = range(num_training)
 X_train = X_train[mask]
 y_train = y_train[mask]
 
-num_test = 500
+num_test = 10
 mask = range(num_test)
 X_test = X_test[mask]
 y_test = y_test[mask]
@@ -48,7 +48,7 @@ def visualize_random():
 classifier = KNearestNeighbor()
 classifier.train(X_train, y_train)
 
-dists = classifier.compute_distances_one_loop(X_test)
+dists = classifier.compute_distances_no_loops(X_test)
 print(dists.shape)
 plt.imshow(dists, interpolation='none')
 plt.show()
