@@ -19,14 +19,16 @@ def load_CIFAR10(ROOT):
     """ load all of cifar """
     xs = []
     ys = []
-    for b in range(1, 6):
+    for b in range(1, 4):  # TODO: load all data files
         f = os.path.join(ROOT, 'data_batch_%d' % (b,))
         X, Y = load_CIFAR_batch(f)
         xs.append(X)
         ys.append(Y)
     Xtr = np.concatenate(xs)
+    del xs
     Ytr = np.concatenate(ys)
-    del X, Y
+    del ys
+
     Xte, Yte = load_CIFAR_batch(os.path.join(ROOT, 'test_batch'))
     return Xtr, Ytr, Xte, Yte
 
