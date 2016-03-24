@@ -1,10 +1,10 @@
+import time
 import numpy as np
-from cs231n.data_utils import load_CIFAR10
 import matplotlib.pyplot as plt
+from cs231n.data_utils import load_CIFAR10
 from cs231n.classifiers.linear_svm import svm_loss_naive
 from cs231n.classifiers.linear_svm import svm_loss_vectorized
-import time
-
+from cs231n.classifiers import LinearSVM
 
 # Global settings
 plt.interactive(False)
@@ -18,7 +18,7 @@ X_train, y_train, X_test, y_test = load_CIFAR10('./cs231n/datasets/cifar-10-batc
 num_training = int(X_train.shape[0] * 0.9)
 num_validation = X_train.shape[0] - num_training
 num_test = 1000
-num_dev = 25
+num_dev = 200
 
 # Our validation set will be num_validation points from the original
 # training set.
@@ -112,4 +112,20 @@ def test_svm_loss_vectorized():
     difference = np.linalg.norm(grad_naive - grad_vectorized, ord='fro')
     print('Gradient difference: %f' % difference)
 
-test_svm_loss_vectorized()
+
+def test_stochastic_gradient_descent():
+    svm = LinearSVM()
+    tic = time.time()
+    loss_hist = svm.train(X_train, y_train, learning_rate=1e-7, reg=5e4,
+                          batch_size=20, num_iters=1500, verbose=True)
+    toc = time.time()
+    print('Train took %fs' % (toc - tic))
+
+    # plot loss to iterations
+    plt.plot(loss_hist)
+    plt.xlabel('Iteration number')
+    plt.ylabel('Loss value')
+    plt.show()
+
+
+test_stochastic_gradient_descent()

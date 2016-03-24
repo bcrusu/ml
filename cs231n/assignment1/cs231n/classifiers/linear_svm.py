@@ -1,5 +1,4 @@
 import numpy as np
-from random import shuffle
 
 OF_SAME_SHAPE_AS_W_ = """
     Structured SVM loss function, naive implementation (with loops).
@@ -80,6 +79,7 @@ def svm_loss_vectorized(W, X, y, reg):
     loss += 0.5 * reg * np.sum(W * W)
 
     # compute the gradient
+    # TODO: find better solution (no loops)
     for i in range(num_train):
         for j in range(num_classes):
             if margins[i, j] == 0:
