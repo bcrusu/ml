@@ -1,4 +1,6 @@
 import time
+import math
+import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 from cs231n.data_utils import load_CIFAR10
@@ -18,7 +20,7 @@ X_train, y_train, X_test, y_test = load_CIFAR10('./cs231n/datasets/cifar-10-batc
 num_training = int(X_train.shape[0] * 0.9)
 num_validation = X_train.shape[0] - num_training
 num_test = 1000
-num_dev = 200
+num_dev = 1000
 
 # Our validation set will be num_validation points from the original
 # training set.
@@ -132,4 +134,72 @@ def test_stochastic_gradient_descent():
     y_val_pred = svm.predict(X_val)
     print('validation accuracy: %f' % (np.mean(y_val == y_val_pred),))
 
-test_stochastic_gradient_descent()
+
+def hyperparameters_tuning():
+    learning_rates = np.linspace(75e-9, 80e-9, 5)
+    regularization_strengths = np.linspace(3e4, 5e4, 3)
+
+    # results is dictionary mapping tuples of the form
+    # (learning_rate, regularization_strength) to tuples of the form
+    # (training_accuracy, validation_accuracy). The accuracy is simply the fraction
+    # of data points that are correctly classified.
+    results = {}
+    best_val = -1    # The highest validation accuracy that we have seen so far.
+    best_svm = None  # The LinearSVM object that achieved the highest validation rate.
+
+    for learning_rate, regularization_strength in itertools.product(learning_rates, regularization_strengths):
+        print("learning_rate = %e; regularization_strength = %e" % (learning_rate, regularization_strength))
+
+        svm = LinearSVM()
+        svm.train(X_train, y_train, learning_rate=learning_rate,
+                  reg=regularization_strength, batch_size=32, num_iters=1000, verbose=True)
+
+        y_train_pred = svm.predict(X_train)
+        train_accuracy = np.mean(y_train == y_train_pred)
+        y_val_pred = svm.predict(X_val)
+        val_accuracy = np.mean(y_val == y_val_pred)
+
+        results[(learning_rate, regularization_strength)] = (train_accuracy, val_accuracy)
+
+        if val_accuracy > best_val:
+            best_val = val_accuracy
+            best_svm = svm
+
+    # Print out results.
+    for lr, reg in sorted(results):
+        train_accuracy, val_accuracy = results[(lr, reg)]
+        print('lr %e reg %e train accuracy: %f val accuracy: %f' % (
+                    lr, reg, train_accuracy, val_accuracy))
+
+    print('best validation accuracy achieved during cross-validation: %f' % best_val)
+
+    # Visualize the cross-validation results
+    x_scatter = [math.log10(x[0]) for x in results]
+    y_scatter = [math.log10(x[1]) for x in results]
+
+    # plot training accuracy
+    marker_size = 100
+    colors = [results[x][0] for x in results]
+    plt.subplot(2, 1, 1)
+    plt.scatter(x_scatter, y_scatter, marker_size, c=colors)
+    plt.colorbar()
+    plt.xlabel('log learning rate')
+    plt.ylabel('log regularization strength')
+    plt.title('CIFAR-10 training accuracy')
+
+    # plot validation accuracy
+    colors = [results[x][1] for x in results] # default size of markers is 20
+    plt.subplot(2, 1, 2)
+    plt.scatter(x_scatter, y_scatter, marker_size, c=colors)
+    plt.colorbar()
+    plt.xlabel('log learning rate')
+    plt.ylabel('log regularization strength')
+    plt.title('CIFAR-10 validation accuracy')
+    plt.show()
+
+    # Evaluate the best svm on test set
+    y_test_pred = best_svm.predict(X_test)
+    test_accuracy = np.mean(y_test == y_test_pred)
+    print('linear SVM on raw pixels final test set accuracy: %f' % test_accuracy)
+
+hyperparameters_tuning()

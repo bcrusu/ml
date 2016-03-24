@@ -35,15 +35,16 @@ class LinearClassifier(object):
         # Run stochastic gradient descent to optimize W
         loss_history = []
         for it in range(num_iters):
-            batch_choice = np.random.choice(num_train, batch_size, replace=False)
+            batch_choice = np.random.choice(num_train, batch_size, replace=True)
             X_batch = X[batch_choice]
             y_batch = y[batch_choice]
 
             # evaluate loss and gradient
             loss, grad = self.loss(X_batch, y_batch, reg)
+
             loss_history.append(loss)
 
-            self.W -= learning_rate * grad
+            self.W += - learning_rate * grad
 
             if verbose and it % 100 == 0:
                 print('iteration %d / %d: loss %f' % (it, num_iters, loss))
