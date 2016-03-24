@@ -117,15 +117,19 @@ def test_stochastic_gradient_descent():
     svm = LinearSVM()
     tic = time.time()
     loss_hist = svm.train(X_train, y_train, learning_rate=1e-7, reg=5e4,
-                          batch_size=20, num_iters=1500, verbose=True)
+                          batch_size=32, num_iters=1000, verbose=True)
     toc = time.time()
     print('Train took %fs' % (toc - tic))
 
     # plot loss to iterations
-    plt.plot(loss_hist)
-    plt.xlabel('Iteration number')
-    plt.ylabel('Loss value')
-    plt.show()
+    # plt.plot(loss_hist)
+    # plt.xlabel('Iteration number')
+    # plt.ylabel('Loss value')
+    # plt.show()
 
+    y_train_pred = svm.predict(X_train)
+    print('training accuracy: %f' % (np.mean(y_train == y_train_pred),))
+    y_val_pred = svm.predict(X_val)
+    print('validation accuracy: %f' % (np.mean(y_val == y_val_pred),))
 
 test_stochastic_gradient_descent()
