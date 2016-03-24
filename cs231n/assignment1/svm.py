@@ -1,6 +1,10 @@
 import numpy as np
 from cs231n.data_utils import load_CIFAR10
 import matplotlib.pyplot as plt
+from cs231n.classifiers.linear_svm import svm_loss_naive
+from cs231n.classifiers.linear_svm import svm_loss_vectorized
+import time
+
 
 # Global settings
 plt.interactive(False)
@@ -14,7 +18,7 @@ X_train, y_train, X_test, y_test = load_CIFAR10('./cs231n/datasets/cifar-10-batc
 num_training = int(X_train.shape[0] * 0.9)
 num_validation = X_train.shape[0] - num_training
 num_test = 1000
-num_dev = 10
+num_dev = 25
 
 # Our validation set will be num_validation points from the original
 # training set.
@@ -65,10 +69,6 @@ X_dev = np.hstack([X_dev, np.ones((X_dev.shape[0], 1))])
 
 
 def test_svm_loss_naive():
-    # Evaluate the naive implementation of the loss we provided for you:
-    from cs231n.classifiers.linear_svm import svm_loss_naive
-    import time
-
     # generate a random SVM weight matrix of small numbers
     W = np.random.randn(3073, 10) * 0.0001
 
@@ -88,4 +88,28 @@ def test_svm_loss_naive():
     f = lambda w: svm_loss_naive(w, X_dev, y_dev, 1e2)[0]
     grad_numerical = grad_check_sparse(f, W, grad)
 
-test_svm_loss_naive()
+
+def test_svm_loss_vectorized():
+    # generate a random SVM weight matrix of small numbers
+    W = np.random.randn(3073, 10) * 0.0001
+
+    tic = time.time()
+    loss_naive, grad_naive = svm_loss_naive(W, X_dev, y_dev, 0.00001)
+    toc = time.time()
+    print('Naive: %e computed in %fs' % (loss_naive, toc - tic))
+
+    tic = time.time()
+    loss_vectorized, grad_vectorized = svm_loss_vectorized(W, X_dev, y_dev, 0.00001)
+    toc = time.time()
+    print('Vectorized: %e computed in %fs' % (loss_vectorized, toc - tic))
+
+    # The losses should match but your vectorized implementation should be much faster.
+    print('Loss difference: %f' % (loss_naive - loss_vectorized))
+
+    # The loss is a single number, so it is easy to compare the values computed
+    # by the two implementations. The gradient on the other hand is a matrix, so
+    # we use the Frobenius norm to compare them.
+    difference = np.linalg.norm(grad_naive - grad_vectorized, ord='fro')
+    print('Gradient difference: %f' % difference)
+
+test_svm_loss_vectorized()

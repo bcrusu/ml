@@ -40,8 +40,6 @@ def svm_loss_naive(W, X, y, reg):
 
                 for xi in range(dW.shape[0]):
                     dW[xi, j] += X[i][xi]
-
-                for xi in range(dW.shape[0]):
                     dW[xi, y[i]] -= X[i][xi]
 
     # Right now the loss is a sum over all training examples, but we want it
@@ -63,32 +61,34 @@ def svm_loss_vectorized(W, X, y, reg):
 
     Inputs and outputs are the same as svm_loss_naive.
     """
+    num_classes = W.shape[1]
+    num_train = X.shape[0]
     loss = 0.0
     dW = np.zeros(W.shape)  # initialize the gradient as zero
 
-    #############################################################################
-    # TODO:                                                                     #
-    # Implement a vectorized version of the structured SVM loss, storing the    #
-    # result in loss.                                                           #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    # compute the loss
+    scores = X.dot(W)
+    correct_class_scores = scores[range(num_train), y]
 
+    margins = np.maximum(0, scores - correct_class_scores[:, np.newaxis] + 1)
+    margins[range(num_train), y] = 0
 
-    #############################################################################
-    # TODO:                                                                     #
-    # Implement a vectorized version of the gradient for the structured SVM     #
-    # loss, storing the result in dW.                                           #
-    #                                                                           #
-    # Hint: Instead of computing the gradient from scratch, it may be easier    #
-    # to reuse some of the intermediate values that you used to compute the     #
-    # loss.                                                                     #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    loss = np.sum(margins)
+    loss /= num_train
+
+    # Add regularization to the loss.
+    loss += 0.5 * reg * np.sum(W * W)
+
+    # compute the gradient
+    for i in range(num_train):
+        for j in range(num_classes):
+            if margins[i, j] == 0:
+                continue
+
+            dW[:, j] += X[i][:]
+            dW[:, y[i]] -= X[i][:]
+
+    dW /= num_train
+    dW += W * reg
 
     return loss, dW
