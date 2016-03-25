@@ -85,4 +85,25 @@ def test_softmax_loss_naive():
     grad_numerical = grad_check_sparse(f, W, grad, 10)
 
 
-test_softmax_loss_naive()
+def test_softmax_loss_vectorized():
+    # Generate a random softmax weight matrix and use it to compute the loss.
+    W = np.random.randn(3073, 10) * 0.0001
+
+    tic = time.time()
+    loss_naive, grad_naive = softmax_loss_naive(W, X_dev, y_dev, 0.00001)
+    toc = time.time()
+    print('naive loss: %e computed in %fs' % (loss_naive, toc - tic))
+
+    tic = time.time()
+    loss_vectorized, grad_vectorized = softmax_loss_vectorized(W, X_dev, y_dev, 0.00001)
+    toc = time.time()
+    print('vectorized loss: %e computed in %fs' % (loss_vectorized, toc - tic))
+
+    # As we did for the SVM, we use the Frobenius norm to compare the two versions
+    # of the gradient.
+    grad_difference = np.linalg.norm(grad_naive - grad_vectorized, ord='fro')
+    print('Loss difference: %f' % np.abs(loss_naive - loss_vectorized))
+    print('Gradient difference: %f' % grad_difference)
+
+
+test_softmax_loss_vectorized()

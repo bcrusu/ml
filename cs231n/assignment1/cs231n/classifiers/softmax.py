@@ -1,5 +1,4 @@
 import numpy as np
-from random import shuffle
 
 
 def softmax_loss_naive(W, X, y, reg):
@@ -58,19 +57,28 @@ def softmax_loss_vectorized(W, X, y, reg):
 
     Inputs and outputs are the same as softmax_loss_naive.
     """
-    # Initialize the loss and gradient to zero.
-    loss = 0.0
-    dW = np.zeros_like(W)
+    num_train = X.shape[0]
 
-    #############################################################################
-    # TODO: Compute the softmax loss and its gradient using no explicit loops.  #
-    # Store the loss in loss and the gradient in dW. If you are not careful     #
-    # here, it is easy to run into numeric instability. Don't forget the        #
-    # regularization!                                                           #
-    #############################################################################
-    pass
-    #############################################################################
-    #                          END OF YOUR CODE                                 #
-    #############################################################################
+    scores = X.dot(W)
+    scores -= np.max(scores, axis=1, keepdims=True)  # numeric stability trick
+    scores_exp = np.exp(scores)
+    scores_exp_sum = np.sum(scores_exp, axis=1, keepdims=True)
+
+    softmax_scores = scores_exp / scores_exp_sum
+    correct_softmax_scores = np.zeros_like(scores)
+    correct_softmax_scores[range(num_train), y] = 1
+
+    # calculate loss
+    loss = - np.sum(np.log(softmax_scores[range(num_train), y]))
+
+    # calculate gradient
+    margins = correct_softmax_scores - softmax_scores
+    dW = - X.T.dot(margins)
+
+    loss /= num_train
+    loss += 0.5 * reg * np.sum(W * W)
+
+    dW /= num_train
+    dW += W * reg
 
     return loss, dW
