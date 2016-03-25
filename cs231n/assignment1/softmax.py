@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from cs231n.data_utils import load_CIFAR10
 from cs231n.classifiers.softmax import softmax_loss_naive
 from cs231n.classifiers.softmax import softmax_loss_vectorized
-from cs231n.classifiers import LinearSVM
+from cs231n.classifiers import Softmax
 
 # Global settings
 plt.interactive(False)
@@ -106,4 +106,61 @@ def test_softmax_loss_vectorized():
     print('Gradient difference: %f' % grad_difference)
 
 
-test_softmax_loss_vectorized()
+def hyperparameters_tuning():
+    learning_rates = np.linspace(1e-7, 9e-7, 10)
+    regularization_strengths = np.linspace(1e4, 5e4, 3)
+
+    results = {}
+    best_val = -1
+    best_softmax = None
+
+    for learning_rate, regularization_strength in itertools.product(learning_rates, regularization_strengths):
+        print("learning_rate = %e; regularization_strength = %e" % (learning_rate, regularization_strength))
+
+        softmax = Softmax()
+        softmax.train(X_train, y_train, learning_rate=learning_rate,
+                  reg=regularization_strength, batch_size=32, num_iters=1000, verbose=True)
+
+        y_train_pred = softmax.predict(X_train)
+        train_accuracy = np.mean(y_train == y_train_pred)
+        y_val_pred = softmax.predict(X_val)
+        val_accuracy = np.mean(y_val == y_val_pred)
+
+        results[(learning_rate, regularization_strength)] = (train_accuracy, val_accuracy)
+
+        if val_accuracy > best_val:
+            best_val = val_accuracy
+            best_softmax = softmax
+
+    # Print out results.
+    for lr, reg in sorted(results):
+        train_accuracy, val_accuracy = results[(lr, reg)]
+        print('lr %e reg %e train accuracy: %f val accuracy: %f' % (
+                    lr, reg, train_accuracy, val_accuracy))
+
+    print('best validation accuracy achieved during cross-validation: %f' % best_val)
+
+    # Evaluate the best softmax on test set
+    y_test_pred = best_softmax.predict(X_test)
+    test_accuracy = np.mean(y_test == y_test_pred)
+    print('softmax on raw pixels final test set accuracy: %f' % (test_accuracy, ))
+
+    # Visualize the learned weights for each class
+    w = best_softmax.W[:-1, :]  # strip out the bias
+    w = w.reshape(32, 32, 3, 10)
+
+    w_min, w_max = np.min(w), np.max(w)
+
+    classes = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+    for i in range(10):
+        plt.subplot(2, 5, i + 1)
+
+        # Rescale the weights to be between 0 and 255
+        wimg = 255.0 * (w[:, :, :, i].squeeze() - w_min) / (w_max - w_min)
+        plt.imshow(wimg.astype('uint8'))
+        plt.axis('off')
+        plt.title(classes[i])
+
+    plt.show()
+
+hyperparameters_tuning()
