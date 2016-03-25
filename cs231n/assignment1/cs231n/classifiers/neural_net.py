@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class TwoLayerNet(object):
@@ -62,29 +61,27 @@ class TwoLayerNet(object):
         - grads: Dictionary mapping parameter names to gradients of those parameters
           with respect to the loss function; has the same keys as self.params.
         """
+        num_train = X.shape[0]
+
         # Unpack variables from the params dictionary
         W1, b1 = self.params['W1'], self.params['b1']
         W2, b2 = self.params['W2'], self.params['b2']
         N, D = X.shape
 
         # Compute the forward pass
-        scores = None
-        #############################################################################
-        # TODO: Perform the forward pass, computing the class scores for the input. #
-        # Store the result in the scores variable, which should be an array of      #
-        # shape (N, C).                                                             #
-        #############################################################################
-        pass
-        #############################################################################
-        #                              END OF YOUR CODE                             #
-        #############################################################################
+        # 1. first layer scores
+        hidden_layer_scores = X.dot(W1) + b1
+
+        # 2. ReLU for the above scores
+        hidden_layer_relu = np.maximum(0, hidden_layer_scores)
+
+        # 3. output layer scores
+        scores = hidden_layer_relu.dot(W2) + b2
 
         # If the targets are not given then jump out, we're done
         if y is None:
             return scores
 
-        # Compute the loss
-        loss = None
         #############################################################################
         # TODO: Finish the forward pass, and compute the loss. This should include  #
         # both the data loss and L2 regularization for W1 and W2. Store the result  #
