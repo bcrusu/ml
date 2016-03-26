@@ -82,17 +82,19 @@ class TwoLayerNet(object):
         if y is None:
             return scores
 
-        #############################################################################
-        # TODO: Finish the forward pass, and compute the loss. This should include  #
-        # both the data loss and L2 regularization for W1 and W2. Store the result  #
-        # in the variable loss, which should be a scalar. Use the Softmax           #
-        # classifier loss. So that your results match ours, multiply the            #
-        # regularization loss by 0.5                                                #
-        #############################################################################
-        pass
-        #############################################################################
-        #                              END OF YOUR CODE                             #
-        #############################################################################
+        # Compute the loss
+        # apply numeric stability trick
+        scores_stable = scores - np.max(scores, axis=1, keepdims=True)
+        scores_stable_exp = np.exp(scores_stable)
+        scores_stable_exp_sum = np.sum(scores_stable_exp, axis=1, keepdims=True)
+
+        # softmax scores (sum==1)
+        softmax_scores = scores_stable_exp / scores_stable_exp_sum
+
+        loss = - np.sum(np.log(softmax_scores[range(num_train), y]))
+        loss /= num_train
+        loss += 0.5 * reg * np.sum(W2 * W2)
+        loss += 0.5 * reg * np.sum(W1 * W1)
 
         # Backward pass: compute gradients
         grads = {}
