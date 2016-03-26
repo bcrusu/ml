@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from cs231n.data_utils import load_CIFAR10
 from cs231n.classifiers.neural_net import TwoLayerNet
+from cs231n.gradient_check import eval_numerical_gradient
 
 # Global settings
 plt.interactive(False)
@@ -66,4 +67,16 @@ def test_forward_pass():
     print('Difference between your loss and correct loss:')
     print(np.sum(np.abs(loss - correct_loss)))
 
-test_forward_pass()
+
+def test_backward_pass():
+    # Use numeric gradient checking to check the backward pass.
+    loss, grads = net.loss(X, y, reg=0.1)
+
+    # these should all be less than 1e-8 or so
+    for param_name in grads:
+        f = lambda W: net.loss(X, y, reg=0.1)[0]
+        param_grad_num = eval_numerical_gradient(f, net.params[param_name], verbose=False)
+        print('%s max relative error: %e' % (param_name, rel_error(param_grad_num, grads[param_name])))
+
+
+test_backward_pass()

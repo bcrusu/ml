@@ -66,47 +66,62 @@ class TwoLayerNet(object):
         # Unpack variables from the params dictionary
         W1, b1 = self.params['W1'], self.params['b1']
         W2, b2 = self.params['W2'], self.params['b2']
-        N, D = X.shape
 
         # Compute the forward pass
         # 1. first layer scores
-        hidden_layer_scores = X.dot(W1) + b1
+        scores1 = X.dot(W1) + b1
 
         # 2. ReLU for the above scores
-        hidden_layer_relu = np.maximum(0, hidden_layer_scores)
+        scores1_relu = np.maximum(0, scores1)
 
         # 3. output layer scores
-        scores = hidden_layer_relu.dot(W2) + b2
+        scores2 = scores1_relu.dot(W2) + b2
 
         # If the targets are not given then jump out, we're done
         if y is None:
-            return scores
+            return scores2
 
         # Compute the loss
         # apply numeric stability trick
-        scores_stable = scores - np.max(scores, axis=1, keepdims=True)
-        scores_stable_exp = np.exp(scores_stable)
-        scores_stable_exp_sum = np.sum(scores_stable_exp, axis=1, keepdims=True)
+        scores2_stable = scores2 - np.max(scores2, axis=1, keepdims=True)
+        scores2_stable_exp = np.exp(scores2_stable)
+        scores2_stable_exp_sum = np.sum(scores2_stable_exp, axis=1, keepdims=True)
 
         # softmax scores (sum==1)
-        softmax_scores = scores_stable_exp / scores_stable_exp_sum
+        scores2_softmax = scores2_stable_exp / scores2_stable_exp_sum
 
-        loss = - np.sum(np.log(softmax_scores[range(num_train), y]))
+        loss = - np.sum(np.log(scores2_softmax[range(num_train), y]))
         loss /= num_train
         loss += 0.5 * reg * np.sum(W2 * W2)
         loss += 0.5 * reg * np.sum(W1 * W1)
 
         # Backward pass: compute gradients
-        grads = {}
-        #############################################################################
-        # TODO: Compute the backward pass, computing the derivatives of the weights #
-        # and biases. Store the results in the grads dictionary. For example,       #
-        # grads['W1'] should store the gradient on W1, and be a matrix of same size #
-        #############################################################################
-        pass
-        #############################################################################
-        #                              END OF YOUR CODE                             #
-        #############################################################################
+        correct_softmax_scores = np.zeros_like(scores2_softmax)
+        correct_softmax_scores[range(num_train), y] = 1
+        dloss = correct_softmax_scores - scores2_softmax  # dL/dz = dL/dy * dy/dz (y = scores2_softmax; z = scores2)
+
+        dW2 = - scores1_relu.T.dot(dloss)
+        dW2 /= num_train
+        dW2 += W2 * reg
+
+        db2 = - np.sum(dloss, axis=0)
+        db2 /= num_train
+
+        dscores1_relu = dloss.dot(W2.T)
+
+        drelu_local = np.zeros_like(scores1)
+        drelu_local[scores1 > 0] = 1
+
+        dscore1 = dscores1_relu * drelu_local
+
+        dW1 = - X.T.dot(dscore1)
+        dW1 /= num_train
+        dW1 += W1 * reg
+
+        db1 = - np.sum(dscore1, axis=0)
+        db1 /= num_train
+
+        grads = {"W1": dW1, "b1": db1, "W2": dW2, "b2": db2}
 
         return loss, grads
 
