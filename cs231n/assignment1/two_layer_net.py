@@ -79,4 +79,16 @@ def test_backward_pass():
         print('%s max relative error: %e' % (param_name, rel_error(param_grad_num, grads[param_name])))
 
 
-test_backward_pass()
+def test_train():
+    stats = net.train(X, y, X, y, learning_rate=1e-1, reg=1e-5, num_iters=100, verbose=True)
+
+    print('Final training loss: ', stats['loss_history'][-1])
+
+    # plot the loss history
+    plt.plot(stats['loss_history'])
+    plt.xlabel('iteration')
+    plt.ylabel('training loss')
+    plt.title('Training Loss history')
+    plt.show()
+
+test_train()
