@@ -1,9 +1,5 @@
-import time
-import math
-import itertools
 import numpy as np
 import matplotlib.pyplot as plt
-from cs231n.data_utils import load_CIFAR10
 from cs231n.classifiers.neural_net import TwoLayerNet
 from cs231n.gradient_check import eval_numerical_gradient
 
