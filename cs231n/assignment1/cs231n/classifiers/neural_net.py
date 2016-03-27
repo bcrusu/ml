@@ -127,8 +127,9 @@ class TwoLayerNet(object):
 
     def train(self, X, y, X_val, y_val,
               learning_rate=1e-3, learning_rate_decay=0.95,
-              reg=1e-5, num_iters=100,
-              batch_size=200, verbose=False):
+              reg=1e-5,
+              sgd_momentum_decay=0.98,
+              num_iters=100, batch_size=200, verbose=False):
         """
         Train this neural network using stochastic gradient descent.
 
@@ -136,8 +137,8 @@ class TwoLayerNet(object):
         - X: A numpy array of shape (N, D) giving training data.
         - y: A numpy array f shape (N,) giving training labels; y[i] = c means that
           X[i] has label c, where 0 <= c < C.
-        - X_val: A numpy array of shape (N_val, D) giving validation data.
-        - y_val: A numpy array of shape (N_val,) giving validation labels.
+        - X_val: A numpy array of shape (N_val, D) giving validation data. (not used for actual training)
+        - y_val: A numpy array of shape (N_val,) giving validation labels. (not used for actual training)
         - learning_rate: Scalar giving learning rate for optimization.
         - learning_rate_decay: Scalar giving factor used to decay the learning rate
           after each epoch.
@@ -158,8 +159,15 @@ class TwoLayerNet(object):
         train_acc_history = []
         val_acc_history = []
 
+        # SGD momentum
+        sgd_momentum_mu = 0.5   # friction
+        dW1v = np.zeros_like(W1)
+        db1v = np.zeros_like(b1)
+        dW2v = np.zeros_like(W2)
+        db2v = np.zeros_like(b2)
+
         for it in range(num_iters):
-            batch_choice = np.random.choice(num_train, batch_size, replace=True)
+            batch_choice = np.random.choice(num_train, batch_size, replace=False)
             X_batch = X[batch_choice]
             y_batch = y[batch_choice]
 
@@ -170,11 +178,22 @@ class TwoLayerNet(object):
             dW1, db1 = grads['dW1'], grads['db1']
             dW2, db2 = grads['dW2'], grads['db2']
 
-            # update weights
-            W1 += - learning_rate * dW1
-            b1 += - learning_rate * db1
-            W2 += - learning_rate * dW2
-            b2 += - learning_rate * db2
+            # update weights using momentum
+            dW1v = dW1v * sgd_momentum_mu - learning_rate * dW1
+            db1v = db1v * sgd_momentum_mu - learning_rate * db1
+            dW2v = dW2v * sgd_momentum_mu - learning_rate * dW2
+            db2v = db2v * sgd_momentum_mu - learning_rate * db2
+
+            W1 += dW1v
+            b1 += db1v
+            W2 += dW2v
+            b2 += db2v
+
+            # vanilla SGD
+            # W1 += - learning_rate * dW1
+            # b1 += - learning_rate * db1
+            # W2 += - learning_rate * dW2
+            # b2 += - learning_rate * db2
 
             if verbose and it % 100 == 0:
                 print('iteration %d / %d: loss %f' % (it, num_iters, loss))
@@ -189,9 +208,10 @@ class TwoLayerNet(object):
 
                 # Decay learning rate
                 learning_rate *= learning_rate_decay
+                sgd_momentum_mu = min(0.99, sgd_momentum_mu / sgd_momentum_decay)
 
-                if verbose:
-                    print('epoch %d: train_acc %f: val_acc %f' % (it / iterations_per_epoch, train_acc, val_acc))
+                # if verbose:
+                #     print('epoch %d: train_acc %f: val_acc %f' % (it / iterations_per_epoch, train_acc, val_acc))
 
         return {
             'loss_history': loss_history,

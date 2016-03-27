@@ -69,9 +69,9 @@ def test_train():
 
     # Train the network
     stats = net.train(X_train, y_train, X_val, y_val,
-                num_iters=1000, batch_size=200,
-                learning_rate=1e-4, learning_rate_decay=0.95,
-                reg=0.5, verbose=True)
+                      num_iters=1000, batch_size=200,
+                      learning_rate=1e-4, learning_rate_decay=0.95,
+                      reg=0.5, verbose=True)
 
     # Predict on the validation set
     val_acc = (net.predict(X_val) == y_val).mean()
@@ -95,4 +95,72 @@ def test_train():
     # Visualize the weights of the network
     show_net_weights(net)
 
-test_train()
+
+def hyperparameters_tuning():
+    input_size = 32 * 32 * 3
+    num_classes = 10
+
+    results = {}
+    best_val = -1
+    best_net = None
+
+    max_runs = 20
+    for _ in range(max_runs):
+        learning_rate = 10**np.random.uniform(-3.46, -3.48)
+        regularization_strength = 10**np.random.uniform(-1, 0.5)
+        hidden_size = 50
+
+        print("hidden_size: %d learning_rate_log10: %e; regularization_strength_log10: %e" %
+              (hidden_size, np.log10(learning_rate), np.log10(regularization_strength)))
+
+        net = TwoLayerNet(input_size, hidden_size, num_classes)
+        # Train the network
+        stats = net.train(X_train, y_train, X_val, y_val, num_iters=1000, batch_size=50,
+                          learning_rate=learning_rate, learning_rate_decay=0.95,
+                          reg=regularization_strength, verbose=True)
+
+        y_train_pred = net.predict(X_train)
+        train_accuracy = np.mean(y_train == y_train_pred)
+        y_val_pred = net.predict(X_val)
+        val_accuracy = np.mean(y_val == y_val_pred)
+
+        results[(hidden_size, learning_rate, regularization_strength)] = (train_accuracy, val_accuracy)
+
+        if val_accuracy > best_val:
+            best_val = val_accuracy
+            best_net = net
+
+    # Print out results.
+    for hidden_size, lr, reg in sorted(results):
+        train_accuracy, val_accuracy = results[(hidden_size, lr, reg)]
+        print('hidden_size: %d lr: %e reg: %e train accuracy: %f val accuracy: %f' % (
+            hidden_size, lr, reg, train_accuracy, val_accuracy))
+
+    print('best validation accuracy achieved during cross-validation: %f' % best_val)
+
+    # Evaluate the best net on test set
+    y_test_pred = best_net.predict(X_test)
+    test_accuracy = np.mean(y_test == y_test_pred)
+    print('final test set accuracy: %f' % (test_accuracy,))
+
+    # TODO: fun to observe
+    # # Visualize the learned weights for each class
+    # w = best_softmax.W[:-1, :]  # strip out the bias
+    # w = w.reshape(32, 32, 3, 10)
+    #
+    # w_min, w_max = np.min(w), np.max(w)
+    #
+    # classes = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+    # for i in range(10):
+    #     plt.subplot(2, 5, i + 1)
+    #
+    #     # Rescale the weights to be between 0 and 255
+    #     wimg = 255.0 * (w[:, :, :, i].squeeze() - w_min) / (w_max - w_min)
+    #     plt.imshow(wimg.astype('uint8'))
+    #     plt.axis('off')
+    #     plt.title(classes[i])
+    #
+    # plt.show()
+
+
+hyperparameters_tuning()
