@@ -104,10 +104,10 @@ def hyperparameters_tuning():
     best_val = -1
     best_net = None
 
-    max_runs = 20
+    max_runs = 5
     for _ in range(max_runs):
-        learning_rate = 10**np.random.uniform(-3.46, -3.48)
-        regularization_strength = 10**np.random.uniform(-1, 0.5)
+        learning_rate = 10**np.random.uniform(-3.454, -3.453)
+        regularization_strength = 10**np.random.uniform(0.332, 0.335)
         hidden_size = 50
 
         print("hidden_size: %d learning_rate_log10: %e; regularization_strength_log10: %e" %
@@ -115,7 +115,7 @@ def hyperparameters_tuning():
 
         net = TwoLayerNet(input_size, hidden_size, num_classes)
         # Train the network
-        stats = net.train(X_train, y_train, X_val, y_val, num_iters=1000, batch_size=50,
+        stats = net.train(X_train, y_train, X_val, y_val, num_iters=2000, batch_size=100,
                           learning_rate=learning_rate, learning_rate_decay=0.95,
                           reg=regularization_strength, verbose=True)
 
@@ -143,24 +143,7 @@ def hyperparameters_tuning():
     test_accuracy = np.mean(y_test == y_test_pred)
     print('final test set accuracy: %f' % (test_accuracy,))
 
-    # TODO: fun to observe
-    # # Visualize the learned weights for each class
-    # w = best_softmax.W[:-1, :]  # strip out the bias
-    # w = w.reshape(32, 32, 3, 10)
-    #
-    # w_min, w_max = np.min(w), np.max(w)
-    #
-    # classes = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-    # for i in range(10):
-    #     plt.subplot(2, 5, i + 1)
-    #
-    #     # Rescale the weights to be between 0 and 255
-    #     wimg = 255.0 * (w[:, :, :, i].squeeze() - w_min) / (w_max - w_min)
-    #     plt.imshow(wimg.astype('uint8'))
-    #     plt.axis('off')
-    #     plt.title(classes[i])
-    #
-    # plt.show()
-
+    # visualize the weights of the best network
+    show_net_weights(best_net)
 
 hyperparameters_tuning()
