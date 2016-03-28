@@ -18,7 +18,7 @@ def rel_error(x, y):
 
 
 # load CIFAR-10 data
-X_train, y_train, X_val, y_val, X_test, y_test = get_CIFAR10_data()
+data = get_CIFAR10_data()
 
 
 def test_affine_forward():
@@ -151,16 +151,16 @@ def test_TwoLayerNet():
     assert np.all(b2 == 0), 'Second layer biases do not seem right'
 
     print('Testing test-time forward pass ... ')
-    model.params['W1'] = np.linspace(-0.7, 0.3, num=D*H).reshape(D, H)
+    model.params['W1'] = np.linspace(-0.7, 0.3, num=D * H).reshape(D, H)
     model.params['b1'] = np.linspace(-0.1, 0.9, num=H)
-    model.params['W2'] = np.linspace(-0.3, 0.4, num=H*C).reshape(H, C)
+    model.params['W2'] = np.linspace(-0.3, 0.4, num=H * C).reshape(H, C)
     model.params['b2'] = np.linspace(-0.9, 0.1, num=C)
-    X = np.linspace(-5.5, 4.5, num=N*D).reshape(D, N).T
+    X = np.linspace(-5.5, 4.5, num=N * D).reshape(D, N).T
     scores = model.loss(X)
     correct_scores = np.asarray(
-      [[11.53165108,  12.2917344,   13.05181771,  13.81190102,  14.57198434, 15.33206765,  16.09215096],
-       [12.05769098,  12.74614105,  13.43459113,  14.1230412,   14.81149128, 15.49994135,  16.18839143],
-       [12.58373087,  13.20054771,  13.81736455,  14.43418138,  15.05099822, 15.66781506,  16.2846319 ]])
+        [[11.53165108, 12.2917344, 13.05181771, 13.81190102, 14.57198434, 15.33206765, 16.09215096],
+         [12.05769098, 12.74614105, 13.43459113, 14.1230412, 14.81149128, 15.49994135, 16.18839143],
+         [12.58373087, 13.20054771, 13.81736455, 14.43418138, 15.05099822, 15.66781506, 16.2846319]])
     scores_diff = np.abs(scores - correct_scores).sum()
     assert scores_diff < 1e-6, 'Problem with test-time forward pass'
 
@@ -176,14 +176,83 @@ def test_TwoLayerNet():
     assert abs(loss - correct_loss) < 1e-10, 'Problem with regularization loss'
 
     for reg in [0.0, 0.7]:
-      print('Running numeric gradient check with reg = ', reg)
-      model.reg = reg
-      loss, grads = model.loss(X, y)
+        print('Running numeric gradient check with reg = ', reg)
+        model.reg = reg
+        loss, grads = model.loss(X, y)
 
-      for name in sorted(grads):
-        f = lambda _: model.loss(X, y)[0]
-        grad_num = eval_numerical_gradient(f, model.params[name], verbose=False)
-        print('%s relative error: %.2e' % (name, rel_error(grad_num, grads[name])))
+        for name in sorted(grads):
+            f = lambda _: model.loss(X, y)[0]
+            grad_num = eval_numerical_gradient(f, model.params[name], verbose=False)
+            print('%s relative error: %.2e' % (name, rel_error(grad_num, grads[name])))
 
 
-test_TwoLayerNet()
+def test_TwoLayerNet_hyperparameters_tuning():
+    input_size = 32 * 32 * 3
+    num_classes = 10
+
+    results = {}
+    best_val = -1
+    best_net = None
+
+    visualize_loss = False
+    max_runs = 5
+    for _ in range(max_runs):
+        learning_rate = 10 ** np.random.uniform(-2.85, -2.8)
+        regularization_strength = 10 ** np.random.uniform(0.1, 0.25)
+        hidden_size = 100
+
+        print("hidden_size: %d learning_rate_log10: %e; regularization_strength_log10: %e" %
+              (hidden_size, np.log10(learning_rate), np.log10(regularization_strength)))
+
+        net = TwoLayerNet(input_dim=input_size, hidden_dim=hidden_size,
+                          num_classes=num_classes, reg=regularization_strength)
+
+        solver = Solver(net, data, update_rule='sgd',
+                        optim_config={
+                            'learning_rate': learning_rate
+                        },
+                        lr_decay=0.95, num_epochs=15, batch_size=100,
+                        print_every=100, verbose=True)
+
+        solver.train()
+
+        results[(hidden_size, learning_rate, regularization_strength)] = \
+            (solver.train_acc_history[-1], solver.val_acc_history[-1])
+
+        solver_best_val_acc = solver.best_val_acc
+        if solver_best_val_acc > best_val:
+            best_val = solver_best_val_acc
+            best_net = net
+
+        if visualize_loss:
+            # visualize training loss and train / val accuracy
+            plt.subplot(2, 1, 1)
+            plt.title('Training loss')
+            plt.plot(solver.loss_history, 'o')
+            plt.xlabel('Iteration')
+
+            plt.subplot(2, 1, 2)
+            plt.title('Accuracy')
+            plt.plot(solver.train_acc_history, '-o', label='train')
+            plt.plot(solver.val_acc_history, '-o', label='val')
+            plt.plot([0.5] * len(solver.val_acc_history), 'k--')
+            plt.xlabel('Epoch')
+            plt.legend(loc='lower right')
+            plt.gcf().set_size_inches(15, 12)
+            plt.show()
+
+    # Print out results.
+    for hidden_size, lr, reg in sorted(results):
+        train_accuracy, val_accuracy = results[(hidden_size, lr, reg)]
+        print('hidden_size: %d lr: %e reg: %e train accuracy: %f val accuracy: %f' % (
+            hidden_size, lr, reg, train_accuracy, val_accuracy))
+
+    print('best validation accuracy achieved during cross-validation: %f' % best_val)
+
+    # Evaluate the best net on test set
+    y_test_pred = best_net.predict(data['X_test'])
+    test_accuracy = np.mean(data['y_test'] == y_test_pred)
+    print('final test set accuracy: %f' % test_accuracy)
+
+
+test_TwoLayerNet_hyperparameters_tuning()

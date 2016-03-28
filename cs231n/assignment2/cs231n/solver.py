@@ -31,7 +31,7 @@ class Solver(object):
       'X_train': # training data
       'y_train': # training labels
       'X_val': # validation data
-      'X_train': # validation labels
+      'y_val': # validation labels
     }
     model = MyAwesomeModel(hidden_size=100, reg=10)
     solver = Solver(model, data,
@@ -127,6 +127,9 @@ class Solver(object):
             raise ValueError('Invalid update_rule "%s"' % self.update_rule)
         self.update_rule = getattr(optim, self.update_rule)
 
+        self.best_val_acc = 0
+        self.best_params = {}
+
         self._reset()
 
     def _reset(self):
@@ -145,7 +148,7 @@ class Solver(object):
         # Make a deep copy of the optim_config for each parameter
         self.optim_configs = {}
         for p in self.model.params:
-            d = {k: v for k, v in self.optim_config.iteritems()}
+            d = {k: v for k, v in self.optim_config.items()}
             self.optim_configs[p] = d
 
     def _step(self):
@@ -164,7 +167,7 @@ class Solver(object):
         self.loss_history.append(loss)
 
         # Perform a parameter update
-        for p, w in self.model.params.iteritems():
+        for p, w in self.model.params.items():
             dw = grads[p]
             config = self.optim_configs[p]
             next_w, next_config = self.update_rule(w, dw, config)
@@ -197,7 +200,7 @@ class Solver(object):
             y = y[mask]
 
         # Compute predictions in batches
-        num_batches = N / batch_size
+        num_batches = int(N / batch_size)
         if N % batch_size != 0:
             num_batches += 1
         y_pred = []
@@ -217,18 +220,16 @@ class Solver(object):
         """
         num_train = self.X_train.shape[0]
         iterations_per_epoch = max(num_train / self.batch_size, 1)
-        num_iterations = self.num_epochs * iterations_per_epoch
+        num_iterations = int(self.num_epochs * iterations_per_epoch)
 
         for t in range(num_iterations):
             self._step()
 
             # Maybe print training loss
             if self.verbose and t % self.print_every == 0:
-                print('(Iteration %d / %d) loss: %f' % (
-                    t + 1, num_iterations, self.loss_history[-1]))
+                print('(Iteration %d / %d) loss: %f' % (t + 1, num_iterations, self.loss_history[-1]))
 
-            # At the end of every epoch, increment the epoch counter and decay the
-            # learning rate.
+            # At the end of every epoch, increment the epoch counter and decay the learning rate.
             epoch_end = (t + 1) % iterations_per_epoch == 0
             if epoch_end:
                 self.epoch += 1
@@ -240,21 +241,20 @@ class Solver(object):
             first_it = (t == 0)
             last_it = (t == num_iterations + 1)
             if first_it or last_it or epoch_end:
-                train_acc = self.check_accuracy(self.X_train, self.y_train,
-                                                num_samples=1000)
+                train_acc = self.check_accuracy(self.X_train, self.y_train, num_samples=1000)
                 val_acc = self.check_accuracy(self.X_val, self.y_val)
                 self.train_acc_history.append(train_acc)
                 self.val_acc_history.append(val_acc)
 
                 if self.verbose:
-                    print('(Epoch %d / %d) train acc: %f; val_acc: %f' % (
-                        self.epoch, self.num_epochs, train_acc, val_acc))
+                    print('(Epoch %d / %d) train acc: %f; val_acc: %f' %
+                          (self.epoch, self.num_epochs, train_acc, val_acc))
 
                 # Keep track of the best model
                 if val_acc > self.best_val_acc:
                     self.best_val_acc = val_acc
                     self.best_params = {}
-                    for k, v in self.model.params.iteritems():
+                    for k, v in self.model.params.items():
                         self.best_params[k] = v.copy()
 
         # At the end of training swap the best params into the model

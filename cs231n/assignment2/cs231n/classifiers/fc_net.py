@@ -60,8 +60,6 @@ class TwoLayerNet(object):
         - grads: Dictionary with the same keys as self.params, mapping parameter
           names to gradients of the loss with respect to those parameters.
         """
-        num_train = X.shape[0]
-
         # Unpack variables from the params dictionary
         W1, b1 = self.params['W1'], self.params['b1']
         W2, b2 = self.params['W2'], self.params['b2']
@@ -86,6 +84,26 @@ class TwoLayerNet(object):
         grads = {"W1": dW1, "b1": db1, "W2": dW2, "b2": db2}
 
         return loss, grads
+
+    def predict(self, X):
+        """
+        Use the trained weights of this two-layer network to predict labels for
+        data points. For each data point we predict scores for each of the C
+        classes, and assign each data point to the class with the highest score.
+
+        Inputs:
+        - X: A numpy array of shape (N, D) giving N D-dimensional data points to
+          classify.
+
+        Returns:
+        - y_pred: A numpy array of shape (N,) giving predicted labels for each of
+          the elements of X. For all i, y_pred[i] = c means that X[i] is predicted
+          to have class c, where 0 <= c < C.
+        """
+        scores = self.loss(X)
+
+        y_pred = np.argmax(scores, axis=1)
+        return y_pred
 
 
 class FullyConnectedNet(object):
@@ -170,7 +188,7 @@ class FullyConnectedNet(object):
             self.bn_params = [{'mode': 'train'} for i in range(self.num_layers - 1)]
 
         # Cast all parameters to the correct datatype
-        for k, v in self.params.iteritems():
+        for k, v in self.params.items():
             self.params[k] = v.astype(dtype)
 
     def loss(self, X, y=None):
