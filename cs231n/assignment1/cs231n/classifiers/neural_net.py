@@ -98,13 +98,13 @@ class TwoLayerNet(object):
         # Backward pass: compute gradients
         correct_softmax_scores = np.zeros_like(scores2_softmax)
         correct_softmax_scores[range(num_train), y] = 1
-        dloss = correct_softmax_scores - scores2_softmax  # dL/dz = dL/dy * dy/dz (y = scores2_softmax; z = scores2)
+        dloss = scores2_softmax - correct_softmax_scores  # dL/dz = dL/dy * dy/dz (y = scores2_softmax; z = scores2)
 
-        dW2 = - scores1_relu.T.dot(dloss)
+        dW2 = scores1_relu.T.dot(dloss)
         dW2 /= num_train
         dW2 += W2 * reg
 
-        db2 = - np.sum(dloss, axis=0)
+        db2 = np.sum(dloss, axis=0)
         db2 /= num_train
 
         dscores1_relu = dloss.dot(W2.T)
@@ -114,14 +114,14 @@ class TwoLayerNet(object):
 
         dscore1 = dscores1_relu * drelu_local
 
-        dW1 = - X.T.dot(dscore1)
+        dW1 = X.T.dot(dscore1)
         dW1 /= num_train
         dW1 += W1 * reg
 
-        db1 = - np.sum(dscore1, axis=0)
+        db1 = np.sum(dscore1, axis=0)
         db1 /= num_train
 
-        grads = {"dW1": dW1, "db1": db1, "dW2": dW2, "db2": db2}
+        grads = {"W1": dW1, "b1": db1, "W2": dW2, "b2": db2}
 
         return loss, grads
 
@@ -175,8 +175,8 @@ class TwoLayerNet(object):
             loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
             loss_history.append(loss)
 
-            dW1, db1 = grads['dW1'], grads['db1']
-            dW2, db2 = grads['dW2'], grads['db2']
+            dW1, db1 = grads['W1'], grads['b1']
+            dW2, db2 = grads['W2'], grads['b2']
 
             # update weights using momentum
             dW1v = dW1v * sgd_momentum_mu - learning_rate * dW1
