@@ -85,22 +85,23 @@ def rmsprop(x, dx, config=None):
     - epsilon: Small scalar used for smoothing to avoid dividing by zero.
     - cache: Moving average of second moments of gradients.
     """
-    if config is None: config = {}
+    if config is None:
+        config = {}
+
     config.setdefault('learning_rate', 1e-2)
     config.setdefault('decay_rate', 0.99)
     config.setdefault('epsilon', 1e-8)
     config.setdefault('cache', np.zeros_like(x))
 
-    next_x = None
-    #############################################################################
-    # TODO: Implement the RMSprop update formula, storing the next value of x   #
-    # in the next_x variable. Don't forget to update cache value stored in      #
-    # config['cache'].                                                          #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    learning_rate = config['learning_rate']
+    decay_rate = config['decay_rate']
+    epsilon = config['epsilon']
+    cache = config['cache']
+
+    cache = decay_rate * cache + (1 - decay_rate) * dx ** 2
+    next_x = x - learning_rate * dx / (np.sqrt(cache) + epsilon)
+
+    config['cache'] = cache
 
     return next_x, config
 
@@ -119,7 +120,9 @@ def adam(x, dx, config=None):
     - v: Moving average of squared gradient.
     - t: Iteration number.
     """
-    if config is None: config = {}
+    if config is None:
+        config = {}
+
     config.setdefault('learning_rate', 1e-3)
     config.setdefault('beta1', 0.9)
     config.setdefault('beta2', 0.999)
@@ -128,15 +131,22 @@ def adam(x, dx, config=None):
     config.setdefault('v', np.zeros_like(x))
     config.setdefault('t', 0)
 
-    next_x = None
-    #############################################################################
-    # TODO: Implement the Adam update formula, storing the next value of x in   #
-    # the next_x variable. Don't forget to update the m, v, and t variables     #
-    # stored in config.                                                         #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    learning_rate = config['learning_rate']
+    beta1 = config['beta1']
+    beta2 = config['beta2']
+    epsilon = config['epsilon']
+    m = config['m']
+    v = config['v']
+    t = config['t'] + 1
+
+    m = beta1 * m + (1 - beta1) * dx
+    v = beta2 * v + (1 - beta2) * (dx ** 2)
+    mb = m / (1 - beta1 ** t)
+    vb = v / (1 - beta2 ** t)
+    next_x = x - (learning_rate * mb / (np.sqrt(vb) + epsilon))
+
+    config['m'] = m
+    config['v'] = v
+    config['t'] = t
 
     return next_x, config
