@@ -100,4 +100,90 @@ def test_batchnorm_backward():
     print('dbeta error: ', rel_error(db_num, dbeta))
 
 
-test_batchnorm_backward()
+def test_FullyConnectedNet_with_batchnorm():
+    N, D, H1, H2, C = 2, 15, 20, 30, 10
+    X = np.random.randn(N, D)
+    y = np.random.randint(C, size=(N,))
+
+    for reg in [0, 3.14]:
+        print('Running check with reg = ', reg)
+        model = FullyConnectedNet([H1, H2], input_dim=D, num_classes=C,
+                                  reg=reg, weight_scale=5e-2, dtype=np.float64,
+                                  use_batchnorm=True)
+
+        loss, grads = model.loss(X, y)
+        print('Initial loss: ', loss)
+
+        for name in sorted(grads):
+            f = lambda _: model.loss(X, y)[0]
+            grad_num = eval_numerical_gradient(f, model.params[name], verbose=False, h=1e-5)
+            print('%s relative error: %.2e' % (name, rel_error(grad_num, grads[name])))
+
+        print('-------------------------------------------')
+
+
+def test_FullyConnectedNet_with_batchnorm_vs_without_batchnorm():
+    hidden_dims = [100, 100, 100, 100, 100]
+
+    num_train = 1000
+    small_data = {
+        'X_train': data['X_train'][:num_train],
+        'y_train': data['y_train'][:num_train],
+        'X_val': data['X_val'],
+        'y_val': data['y_val'],
+    }
+
+    weight_scale = 2e-2
+    bn_model = FullyConnectedNet(hidden_dims, weight_scale=weight_scale, use_batchnorm=True)
+    model = FullyConnectedNet(hidden_dims, weight_scale=weight_scale, use_batchnorm=False)
+
+    bn_solver = Solver(bn_model, small_data,
+                       num_epochs=10, batch_size=50,
+                       update_rule='adam',
+                       optim_config={
+                           'learning_rate': 1e-3
+                       },
+                       verbose=True, print_every=200)
+    bn_solver.train()
+
+    solver = Solver(model, small_data,
+                    num_epochs=10, batch_size=50,
+                    update_rule='adam',
+                    optim_config={
+                        'learning_rate': 1e-3
+                    },
+                    verbose=True, print_every=200)
+    solver.train()
+
+    plt.subplot(3, 1, 1)
+    plt.title('Training loss')
+    plt.xlabel('Iteration')
+
+    plt.subplot(3, 1, 2)
+    plt.title('Training accuracy')
+    plt.xlabel('Epoch')
+
+    plt.subplot(3, 1, 3)
+    plt.title('Validation accuracy')
+    plt.xlabel('Epoch')
+
+    plt.subplot(3, 1, 1)
+    plt.plot(solver.loss_history, 'o', label='baseline')
+    plt.plot(bn_solver.loss_history, 'o', label='batchnorm')
+
+    plt.subplot(3, 1, 2)
+    plt.plot(solver.train_acc_history, '-o', label='baseline')
+    plt.plot(bn_solver.train_acc_history, '-o', label='batchnorm')
+
+    plt.subplot(3, 1, 3)
+    plt.plot(solver.val_acc_history, '-o', label='baseline')
+    plt.plot(bn_solver.val_acc_history, '-o', label='batchnorm')
+
+    for i in [1, 2, 3]:
+        plt.subplot(3, 1, i)
+        plt.legend(loc='upper center', ncol=4)
+    plt.gcf().set_size_inches(15, 15)
+    plt.show()
+
+
+test_FullyConnectedNet_with_batchnorm_vs_without_batchnorm()
