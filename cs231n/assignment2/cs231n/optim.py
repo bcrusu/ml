@@ -55,20 +55,19 @@ def sgd_momentum(w, dw, config=None):
     - velocity: A numpy array of the same shape as w and dw used to store a moving
       average of the gradients.
     """
-    if config is None: config = {}
+    if config is None:
+        config = {}
+
     config.setdefault('learning_rate', 1e-2)
     config.setdefault('momentum', 0.9)
+
+    learning_rate = config['learning_rate']
+    momentum = config['momentum']
     v = config.get('velocity', np.zeros_like(w))
 
-    next_w = None
-    #############################################################################
-    # TODO: Implement the momentum update formula. Store the updated value in   #
-    # the next_w variable. You should also use and update the velocity v.       #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    v = v * momentum - learning_rate * dw
+    next_w = w + v
+
     config['velocity'] = v
 
     return next_w, config
