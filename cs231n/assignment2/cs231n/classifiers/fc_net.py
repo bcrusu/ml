@@ -164,19 +164,12 @@ class FullyConnectedNet(object):
 
             self.params['W' + layer_str] = np.random.normal(0, weight_scale, (prev_layer_dims, layer_dims))
             self.params['b' + layer_str] = np.zeros(layer_dims)
-            prev_layer_dims = layer_dims
 
-        ############################################################################
-        # TODO:
-        # When using batch normalization, store scale and shift parameters for the #
-        # first layer in gamma1 and beta1; for the second layer use gamma2 and     #
-        # beta2, etc. Scale parameters should be initialized to one and shift      #
-        # parameters should be initialized to zero.                                #
-        ############################################################################
-        pass
-        ############################################################################
-        #                             END OF YOUR CODE                             #
-        ############################################################################
+            if self.use_batchnorm:
+                self.params['gamma' + layer_str] = 1
+                self.params['beta' + layer_str] = 0
+
+            prev_layer_dims = layer_dims
 
         # When using dropout we need to pass a dropout_param dictionary to each
         # dropout layer so that the layer knows the dropout probability and the mode
@@ -218,6 +211,7 @@ class FullyConnectedNet(object):
                 bn_param[mode] = mode
 
         affine_caches = []
+        batchnorm_caches = []
         relu_caches = []
         scores = X
         for layer in range(self.num_layers):
@@ -230,6 +224,15 @@ class FullyConnectedNet(object):
             scores, cache = affine_forward(scores, W, b)
             affine_caches.append(cache)
 
+            if self.use_batchnorm:
+                gamma = self.params['gamma' + layer_str]
+                beta = self.params['beta' + layer_str]
+                bn_param = self.bn_params[layer]
+                bn_param['mode'] = mode
+
+                scores, cache = batchnorm_forward(scores, gamma, beta, bn_param)
+                batchnorm_caches.append(cache)
+
             if not layer_is_last:
                 scores, cache = relu_forward(scores)
                 relu_caches.append(cache)
@@ -238,11 +241,6 @@ class FullyConnectedNet(object):
         # TODO:
         # When using dropout, you'll need to pass self.dropout_param to each       #
         # dropout forward pass.                                                    #
-        #                                                                          #
-        # When using batch normalization, you'll need to pass self.bn_params[0] to #
-        # the forward pass for the first batch normalization layer, pass           #
-        # self.bn_params[1] to the forward pass for the second batch normalization #
-        # layer, etc.                                                              #
         ############################################################################
         pass
         ############################################################################
@@ -270,21 +268,16 @@ class FullyConnectedNet(object):
             if not layer_is_last:
                 dx = relu_backward(dx, relu_caches[layer])
 
+            if self.use_batchnorm:
+                dx, dgamma, dbeta = batchnorm_backward(dx, batchnorm_caches[layer])
+                grads['gamma' + layer_str] = dgamma
+                grads['beta' + layer_str] = dbeta
+
             dx, dW, db = affine_backward(dx, affine_caches[layer])
             dW += self.reg * W
             dW += self.reg * b
 
             grads['W' + layer_str] = dW
             grads['b' + layer_str] = db
-
-        ############################################################################
-        # TODO:
-        # When using batch normalization, you don't need to regularize the scale   #
-        # and shift parameters.                                                    #
-        ############################################################################
-        pass
-        ############################################################################
-        #                             END OF YOUR CODE                             #
-        ############################################################################
 
         return loss, grads
