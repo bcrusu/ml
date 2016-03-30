@@ -182,8 +182,9 @@ def batchnorm_backward(dout, cache):
 
     dx_std = dout * gamma
     # from http://arxiv.org/abs/1502.03167
-    dsample_var = np.sum(dx_std * (x - sample_mean), axis=0) * (- 0.5 * np.power(sample_var + eps, -3/2))
-    dsample_mean = np.sum(- dx_std / np.sqrt(sample_var + eps), axis=0) + dsample_var / N * np.sum(-2 * (x - sample_mean), axis=0)
+    dsample_var = np.sum(dx_std * (x - sample_mean), axis=0) * (- 0.5 * np.power(sample_var + eps, -3 / 2))
+    dsample_mean = np.sum(- dx_std / np.sqrt(sample_var + eps), axis=0) + dsample_var / N * np.sum(
+        -2 * (x - sample_mean), axis=0)
     dx = dx_std / np.sqrt(sample_var + eps) + dsample_var * 2 * (x - sample_mean) / N + dsample_mean / N
 
     return dx, dgamma, dbeta
@@ -299,15 +300,27 @@ def conv_forward_naive(x, w, b, conv_param):
       W' = 1 + (W + 2 * pad - WW) / stride
     - cache: (x, w, b, conv_param)
     """
-    out = None
-    #############################################################################
-    # TODO: Implement the convolutional forward pass.                           #
-    # Hint: you can use the function np.pad for padding.                        #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    stride, pad = conv_param['stride'], conv_param['pad']
+
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    H_out = int(1 + (H + 2 * pad - HH) / stride)
+    W_out = int(1 + (W + 2 * pad - WW) / stride)
+
+    x_pad = np.pad(x, [(0, 0), (0, 0), (pad, pad), (pad, pad)], mode='constant', constant_values=0)
+
+    out = np.empty((N, F, H_out, W_out), dtype=x.dtype)
+    for n in range(N):  # n-th input sample
+        for f in range(F):  # f-th filter
+            for i in range(H_out):
+                x_rf_tl = i * stride
+                x_rf_tr = x_rf_tl + HH
+                for j in range(W_out):
+                    x_rf_bl = j * stride
+                    x_rf_br = x_rf_bl + WW
+                    x_rf = x_pad[n, :, x_rf_tl:x_rf_tr, x_rf_bl:x_rf_br]  # current receptive field
+                    out[n, f, i, j] = np.sum(x_rf * w[f]) + b[f]
+
     cache = (x, w, b, conv_param)
     return out, cache
 
