@@ -213,6 +213,7 @@ class FullyConnectedNet(object):
         affine_caches = []
         batchnorm_caches = []
         relu_caches = []
+        dropout_caches = []
         scores = X
         for layer in range(self.num_layers):
             layer_str = str(layer + 1)
@@ -236,15 +237,9 @@ class FullyConnectedNet(object):
                 scores, cache = relu_forward(scores)
                 relu_caches.append(cache)
 
-        ############################################################################
-        # TODO:
-        # When using dropout, you'll need to pass self.dropout_param to each       #
-        # dropout forward pass.                                                    #
-        ############################################################################
-        pass
-        ############################################################################
-        #                             END OF YOUR CODE                             #
-        ############################################################################
+                if self.use_dropout:
+                    scores, cache = dropout_forward(scores, self.dropout_param)
+                    dropout_caches.append(cache)
 
         # If test mode return early
         if mode == 'test':
@@ -265,6 +260,9 @@ class FullyConnectedNet(object):
 
             # backward calls
             if not layer_is_last:
+                if self.use_dropout:
+                    dx = dropout_backward(dx, dropout_caches[layer])
+
                 dx = relu_backward(dx, relu_caches[layer])
 
                 if self.use_batchnorm:
