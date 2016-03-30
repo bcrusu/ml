@@ -1,8 +1,7 @@
-import numpy as np
+from time import time
 import matplotlib.pyplot as plt
-from cs231n.classifiers.cnn import *
 from cs231n.data_utils import get_CIFAR10_data
-from cs231n.gradient_check import eval_numerical_gradient_array, eval_numerical_gradient
+from cs231n.gradient_check import eval_numerical_gradient_array
 from cs231n.layers import *
 from cs231n.fast_layers import *
 from cs231n.solver import Solver
@@ -108,4 +107,120 @@ def test_max_pool_backward_naive():
     print('dx error: ', rel_error(dx, dx_num))
 
 
-test_max_pool_backward_naive()
+def test_conv_layers_naive_vs_fast():
+    from cs231n.fast_layers import conv_forward_fast, conv_backward_fast
+
+    x = np.random.randn(100, 3, 31, 31)
+    w = np.random.randn(25, 3, 3, 3)
+    b = np.random.randn(25, )
+    dout = np.random.randn(100, 25, 16, 16)
+    conv_param = {'stride': 2, 'pad': 1}
+
+    t0 = time()
+    out_naive, cache_naive = conv_forward_naive(x, w, b, conv_param)
+    t1 = time()
+    out_fast, cache_fast = conv_forward_fast(x, w, b, conv_param)
+    t2 = time()
+
+    print('Testing conv_forward_fast:')
+    print('Naive: %fs' % (t1 - t0))
+    print('Fast: %fs' % (t2 - t1))
+    print('Speedup: %fx' % ((t1 - t0) / (t2 - t1)))
+    print('Difference: ', rel_error(out_naive, out_fast))
+
+    t0 = time()
+    dx_naive, dw_naive, db_naive = conv_backward_naive(dout, cache_naive)
+    t1 = time()
+    dx_fast, dw_fast, db_fast = conv_backward_fast(dout, cache_fast)
+    t2 = time()
+
+    print('\nTesting conv_backward_fast:')
+    print('Naive: %fs' % (t1 - t0))
+    print('Fast: %fs' % (t2 - t1))
+    print('Speedup: %fx' % ((t1 - t0) / (t2 - t1)))
+    print('dx difference: ', rel_error(dx_naive, dx_fast))
+    print('dw difference: ', rel_error(dw_naive, dw_fast))
+    print('db difference: ', rel_error(db_naive, db_fast))
+
+
+def test_max_pool_layers_naive_vs_fast():
+    from cs231n.fast_layers import max_pool_forward_fast, max_pool_backward_fast
+
+    x = np.random.randn(100, 3, 32, 32)
+    dout = np.random.randn(100, 3, 16, 16)
+    pool_param = {'pool_height': 2, 'pool_width': 2, 'stride': 2}
+
+    t0 = time()
+    out_naive, cache_naive = max_pool_forward_naive(x, pool_param)
+    t1 = time()
+    out_fast, cache_fast = max_pool_forward_fast(x, pool_param)
+    t2 = time()
+
+    print('Testing pool_forward_fast:')
+    print('Naive: %fs' % (t1 - t0))
+    print('fast: %fs' % (t2 - t1))
+    print('speedup: %fx' % ((t1 - t0) / (t2 - t1)))
+    print('difference: ', rel_error(out_naive, out_fast))
+
+    t0 = time()
+    dx_naive = max_pool_backward_naive(dout, cache_naive)
+    t1 = time()
+    dx_fast = max_pool_backward_fast(dout, cache_fast)
+    t2 = time()
+
+    print('\nTesting pool_backward_fast:')
+    print('Naive: %fs' % (t1 - t0))
+    print('fast: %fs' % (t2 - t1))
+    print('speedup: %fx' % ((t1 - t0) / (t2 - t1)))
+    print('dx difference: ', rel_error(dx_naive, dx_fast))
+
+
+def test_conv_relu_pool_layers():
+    from cs231n.layer_utils import conv_relu_pool_forward, conv_relu_pool_backward
+
+    x = np.random.randn(2, 3, 16, 16)
+    w = np.random.randn(3, 3, 3, 3)
+    b = np.random.randn(3, )
+    dout = np.random.randn(2, 3, 8, 8)
+    conv_param = {'stride': 1, 'pad': 1}
+    pool_param = {'pool_height': 2, 'pool_width': 2, 'stride': 2}
+
+    out, cache = conv_relu_pool_forward(x, w, b, conv_param, pool_param)
+    dx, dw, db = conv_relu_pool_backward(dout, cache)
+
+    dx_num = eval_numerical_gradient_array(lambda x: conv_relu_pool_forward(x, w, b, conv_param, pool_param)[0], x,
+                                           dout)
+    dw_num = eval_numerical_gradient_array(lambda w: conv_relu_pool_forward(x, w, b, conv_param, pool_param)[0], w,
+                                           dout)
+    db_num = eval_numerical_gradient_array(lambda b: conv_relu_pool_forward(x, w, b, conv_param, pool_param)[0], b,
+                                           dout)
+
+    print('Testing conv_relu_pool')
+    print('dx error: ', rel_error(dx_num, dx))
+    print('dw error: ', rel_error(dw_num, dw))
+    print('db error: ', rel_error(db_num, db))
+
+
+def test_conv_relu_layers():
+    from cs231n.layer_utils import conv_relu_forward, conv_relu_backward
+
+    x = np.random.randn(2, 3, 8, 8)
+    w = np.random.randn(3, 3, 3, 3)
+    b = np.random.randn(3, )
+    dout = np.random.randn(2, 3, 8, 8)
+    conv_param = {'stride': 1, 'pad': 1}
+
+    out, cache = conv_relu_forward(x, w, b, conv_param)
+    dx, dw, db = conv_relu_backward(dout, cache)
+
+    dx_num = eval_numerical_gradient_array(lambda x: conv_relu_forward(x, w, b, conv_param)[0], x, dout)
+    dw_num = eval_numerical_gradient_array(lambda w: conv_relu_forward(x, w, b, conv_param)[0], w, dout)
+    db_num = eval_numerical_gradient_array(lambda b: conv_relu_forward(x, w, b, conv_param)[0], b, dout)
+
+    print('Testing conv_relu:')
+    print('dx error: ', rel_error(dx_num, dx))
+    print('dw error: ', rel_error(dw_num, dw))
+    print('db error: ', rel_error(db_num, db))
+
+
+test_conv_relu_layers()
