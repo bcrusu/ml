@@ -246,7 +246,7 @@ def dropout_forward(x, dropout_param):
     out = None
 
     if mode == 'train':
-        mask = (np.random.rand(*x.shape) < p) / p
+        mask = (np.random.rand(*x.shape) < (1 - p)) / (1 - p)
         out = x * mask
     elif mode == 'test':
         out = x
