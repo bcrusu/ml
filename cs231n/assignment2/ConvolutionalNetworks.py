@@ -47,4 +47,25 @@ def test_conv_forward_naive():
     print('difference: ', rel_error(out, correct_out))
 
 
-test_conv_forward_naive()
+def test_conv_backward_naive():
+    x = np.random.randn(4, 3, 5, 5)
+    w = np.random.randn(2, 3, 3, 3)
+    b = np.random.randn(2, )
+    dout = np.random.randn(4, 2, 5, 5)
+    conv_param = {'stride': 1, 'pad': 1}
+
+    dx_num = eval_numerical_gradient_array(lambda x: conv_forward_naive(x, w, b, conv_param)[0], x, dout)
+    dw_num = eval_numerical_gradient_array(lambda w: conv_forward_naive(x, w, b, conv_param)[0], w, dout)
+    db_num = eval_numerical_gradient_array(lambda b: conv_forward_naive(x, w, b, conv_param)[0], b, dout)
+
+    out, cache = conv_forward_naive(x, w, b, conv_param)
+    dx, dw, db = conv_backward_naive(dout, cache)
+
+    # Your errors should be around 1e-9'
+    print('Testing conv_backward_naive function')
+    print('dx error: ', rel_error(dx, dx_num))
+    print('dw error: ', rel_error(dw, dw_num))
+    print('db error: ', rel_error(db, db_num))
+
+
+test_conv_backward_naive()

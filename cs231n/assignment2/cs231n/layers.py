@@ -338,14 +338,37 @@ def conv_backward_naive(dout, cache):
     - dw: Gradient with respect to w
     - db: Gradient with respect to b
     """
-    dx, dw, db = None, None, None
-    #############################################################################
-    # TODO: Implement the convolutional backward pass.                          #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    x, w, b, conv_param = cache
+    stride, pad = conv_param['stride'], conv_param['pad']
+
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    H_out = int(1 + (H + 2 * pad - HH) / stride)
+    W_out = int(1 + (W + 2 * pad - WW) / stride)
+
+    x_pad = np.pad(x, [(0, 0), (0, 0), (pad, pad), (pad, pad)], mode='constant', constant_values=0)
+
+    dw = np.zeros_like(w)
+    db = np.zeros_like(b)
+    dx = np.zeros_like(x_pad)  # same size as padded x for convenience
+
+    for f in range(F):  # f-th filter
+        for i in range(H_out):
+            x_rf_tl = i * stride
+            x_rf_tr = x_rf_tl + HH
+            for j in range(W_out):
+                x_rf_bl = j * stride
+                x_rf_br = x_rf_bl + WW
+                for n in range(N):  # n-th input sample
+                    x_rf = x_pad[n, :, x_rf_tl:x_rf_tr, x_rf_bl:x_rf_br]  # current receptive field
+                    dy = dout[n, f, i, j]  # current loss
+
+                    dw[f] += dy * x_rf
+                    db[f] += dy
+                    dx[n, :, x_rf_tl:x_rf_tr, x_rf_bl:x_rf_br] += dy * w[f]
+
+    dx = dx[:, :, pad:pad + H, pad:pad + W]  # remove temporary padding
+
     return dx, dw, db
 
 
