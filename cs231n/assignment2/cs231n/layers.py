@@ -44,10 +44,14 @@ def affine_backward(dout, cache):
     - db: Gradient with respect to b, of shape (M,)
     """
     x, w, b = cache
-    N = x.shape[0]
+    num_train = x.shape[0]
 
-    dx = dout.dot(w.T).reshape(x.shape)
-    dw = x.reshape(N, -1).T.dot(dout)
+    x_fix = x.reshape(num_train, -1)
+
+    dx = dout.dot(w.T)
+    dx.shape = x.shape
+
+    dw = x_fix.T.dot(dout)
     db = np.sum(dout, axis=0)
 
     return dx, dw, db

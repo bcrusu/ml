@@ -272,7 +272,6 @@ class FullyConnectedNet(object):
 
             dx, dW, db = affine_backward(dx, affine_caches[layer])
             dW += self.reg * W
-            dW += self.reg * b
 
             grads['W' + layer_str] = dW
             grads['b' + layer_str] = db

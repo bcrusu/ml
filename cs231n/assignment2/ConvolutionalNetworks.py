@@ -6,6 +6,7 @@ from cs231n.layers import *
 from cs231n.fast_layers import *
 from cs231n.classifiers.cnn import ThreeLayerConvNet
 from cs231n.solver import Solver
+from cs231n.vis_utils import visualize_grid
 
 # Global settings
 plt.interactive(False)
@@ -249,7 +250,7 @@ def test_ThreeLayerConvNet_gradients():
 
     model = ThreeLayerConvNet(num_filters=3, filter_size=3,
                               input_dim=input_dim, hidden_dim=7,
-                              dtype=np.float64)
+                              dtype=np.float64, reg=reg)
     loss, grads = model.loss(X, y)
     for param_name in sorted(grads):
         f = lambda _: model.loss(X, y)[0]
@@ -258,4 +259,57 @@ def test_ThreeLayerConvNet_gradients():
         print('%s max relative error: %e' % (param_name, rel_error(param_grad_num, grads[param_name])))
 
 
-test_ThreeLayerConvNet_gradients()
+def test_ThreeLayerConvNet_overfit_small_sample():
+    num_train = 100
+    small_data = {
+        'X_train': data['X_train'][:num_train],
+        'y_train': data['y_train'][:num_train],
+        'X_val': data['X_val'],
+        'y_val': data['y_val'],
+    }
+
+    model = ThreeLayerConvNet(weight_scale=1e-2)
+
+    solver = Solver(model, small_data,
+                    num_epochs=10, batch_size=50,
+                    update_rule='adam',
+                    optim_config={
+                        'learning_rate': 1e-3
+                    },
+                    verbose=True, print_every=1)
+    solver.train()
+
+    plt.subplot(2, 1, 1)
+    plt.plot(solver.loss_history, 'o')
+    plt.xlabel('iteration')
+    plt.ylabel('loss')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(solver.train_acc_history, '-o')
+    plt.plot(solver.val_acc_history, '-o')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.xlabel('epoch')
+    plt.ylabel('accuracy')
+    plt.show()
+
+
+def test_ThreeLayerConvNet_CIFAR10():
+    model = ThreeLayerConvNet(weight_scale=0.001, hidden_dim=500, reg=0.001)
+
+    solver = Solver(model, data,
+                    num_epochs=1, batch_size=50,
+                    update_rule='adam',
+                    optim_config={
+                      'learning_rate': 1e-3,
+                    },
+                    verbose=True, print_every=20)
+    solver.train()
+
+    grid = visualize_grid(model.params['W1'].transpose(0, 2, 3, 1))
+    plt.imshow(grid.astype('uint8'))
+    plt.axis('off')
+    plt.gcf().set_size_inches(5, 5)
+    plt.show()
+
+
+test_ThreeLayerConvNet_CIFAR10()
