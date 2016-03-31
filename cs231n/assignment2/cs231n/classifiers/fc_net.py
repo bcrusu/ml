@@ -124,7 +124,8 @@ class FullyConnectedNet(object):
 
     def __init__(self, hidden_dims, input_dim=3 * 32 * 32, num_classes=10,
                  dropout=0, use_batchnorm=False, reg=0.0,
-                 weight_scale=1e-2, dtype=np.float32, seed=None):
+                 weight_scale=1e-2, dtype=np.float32, seed=None,
+                 weight_initialisation='normal'):
         """
         Initialize a new FullyConnectedNet.
 
@@ -162,7 +163,19 @@ class FullyConnectedNet(object):
             else:
                 layer_dims = num_classes
 
-            self.params['W' + layer_str] = np.random.normal(0, weight_scale, (prev_layer_dims, layer_dims))
+            W_size = (prev_layer_dims, layer_dims)
+            if weight_initialisation == 'normal':
+                W = np.random.normal(0, weight_scale, W_size)
+            elif weight_initialisation == 'xavier':
+                xavier_max = np.sqrt(12 / np.sum(W_size))
+                W = np.random.uniform(-xavier_max, xavier_max, W_size)
+            elif weight_initialisation == 'he':
+                std = np.sqrt(2 / W_size[0])
+                W = np.random.normal(0, std, W_size)
+            else:
+                raise ValueError('Invalid weight initialisation provided: %s' % weight_initialisation)
+
+            self.params['W' + layer_str] = W
             self.params['b' + layer_str] = np.zeros(layer_dims)
 
             if self.use_batchnorm and not layer_is_last:

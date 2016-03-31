@@ -495,4 +495,48 @@ def test_RMSProp_vs_Adam():
     plt.show()
 
 
-test_RMSProp_vs_Adam()
+def test_FullyConnectedNet_different_initialisations():
+    num_train = 50
+    small_data = {
+        'X_train': data['X_train'][:num_train],
+        'y_train': data['y_train'][:num_train],
+        'X_val': data['X_val'],
+        'y_val': data['y_val'],
+    }
+
+    weight_initialisations = ['normal', 'he', 'xavier']
+    weight_scale = 3e-2
+    hidden_dims = [100, 100]
+
+    solvers = {}
+    for weight_initialisation in weight_initialisations:
+        print('weight_initialisation: %s' % weight_initialisation)
+
+        model = FullyConnectedNet(hidden_dims, weight_scale=weight_scale, dtype=np.float64,
+                                  weight_initialisation=weight_initialisation)
+        solver = Solver(model, small_data,
+                    print_every=10, num_epochs=17, batch_size=25,
+                    update_rule='sgd_momentum',
+                    optim_config={
+                        'learning_rate': 1e-5
+                    })
+
+        solver.train()
+        solvers[weight_initialisation] = solver
+
+        print('---------------------------------------------------')
+
+    plt.title('Training loss history')
+    plt.xlabel('Iteration')
+    plt.ylabel('Training loss')
+    plt.legend(['train', 'val'], loc='upper left')
+
+    for weight_initialisation in weight_initialisations:
+        solver = solvers[weight_initialisation]
+        plt.plot(solver.loss_history, '-o', label=weight_initialisation)
+
+    plt.legend(loc='upper right', fontsize='x-large')
+    plt.show()
+
+
+test_FullyConnectedNet_different_initialisations()
