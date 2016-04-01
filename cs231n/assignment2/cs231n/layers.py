@@ -458,26 +458,19 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
         old information is discarded completely at every time step, while
         momentum=1 means that new information is never incorporated. The
         default of momentum=0.9 should work well in most situations.
-      - running_mean: Array of shape (D,) giving running mean of features
-      - running_var Array of shape (D,) giving running variance of features
+      - running_mean: Array of shape (C,) giving running mean of features
+      - running_var Array of shape (C,) giving running variance of features
 
     Returns a tuple of:
     - out: Output data, of shape (N, C, H, W)
     - cache: Values needed for the backward pass
     """
-    out, cache = None, None
+    N, C, H, W = x.shape
 
-    #############################################################################
-    # TODO: Implement the forward pass for spatial batch normalization.         #
-    #                                                                           #
-    # HINT: You can implement spatial batch normalization using the vanilla     #
-    # version of batch normalization defined above. Your implementation should  #
-    # be very short; ours is less than five lines.                              #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    x_roll = np.rollaxis(x, 1, 4)
+    x_rool_reshape = x_roll.reshape(N * H * W, C)
+    out_tmp, cache = batchnorm_forward(x_rool_reshape, gamma, beta, bn_param)
+    out = np.rollaxis(out_tmp.reshape(x_roll.shape), 3, 1)
 
     return out, cache
 
@@ -495,19 +488,12 @@ def spatial_batchnorm_backward(dout, cache):
     - dgamma: Gradient with respect to scale parameter, of shape (C,)
     - dbeta: Gradient with respect to shift parameter, of shape (C,)
     """
-    dx, dgamma, dbeta = None, None, None
+    N, C, H, W = dout.shape
 
-    #############################################################################
-    # TODO: Implement the backward pass for spatial batch normalization.        #
-    #                                                                           #
-    # HINT: You can implement spatial batch normalization using the vanilla     #
-    # version of batch normalization defined above. Your implementation should  #
-    # be very short; ours is less than five lines.                              #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    dout_roll = np.rollaxis(dout, 1, 4)
+    dout_rool_reshape = dout_roll.reshape(N * H * W, C)
+    dx_tmp, dgamma, dbeta = batchnorm_backward(dout_rool_reshape, cache)
+    dx = np.rollaxis(dx_tmp.reshape(dout_roll.shape), 3, 1)
 
     return dx, dgamma, dbeta
 
