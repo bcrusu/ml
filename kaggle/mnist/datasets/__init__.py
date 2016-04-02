@@ -16,7 +16,6 @@ def load_mnist_test():
 
 def load_mnist_train(labels_encoding='original'):
     """
-
     :param labels_encoding: the encoding used for labels:
         - original: original MNIST values (each label is represented by a integer in the interval 0-9)
         - one-hot: each label is represented by a sparse array containing value 1 only for the correct label.
@@ -33,8 +32,8 @@ def load_mnist_train(labels_encoding='original'):
     if labels_encoding == 'original':
         y_encoded = y
     elif labels_encoding == 'one-hot':
-        y_encoded = np.zeros((y.shape[0], 10))
-        y_encoded[range(y.shape[0]), y] = 1
+        y_encoded = np.zeros((y.shape[0], 10), dtype=np.float32)
+        y_encoded[range(y.shape[0]), y] = 1.0
     else:
         raise ValueError('Invalid value for labels_encoding: %s' % labels_encoding)
 

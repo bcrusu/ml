@@ -6,7 +6,7 @@ import nets
 
 
 def load_mnist_dataset():
-    x_train_all, y_train_all = datasets.load_mnist_train()
+    x_train_all, y_train_all = datasets.load_mnist_train(labels_encoding='one-hot')
     x_test = datasets.load_mnist_test()
 
     num_training = int(x_train_all.shape[0] * 0.8)  # 20% for validation
@@ -56,24 +56,23 @@ def fill_feed_dict(data_set, images_pl, labels_pl):
 
     feed_dict = {
         images_pl: x_batch,
-        labels_pl: y_batch,
+        labels_pl: y_batch
     }
     return feed_dict
 
 
 def do_eval(sess,
-            eval_correct,
+            forward_op,
             images_placeholder,
             labels_placeholder,
             data_set):
     """Runs one evaluation against the full epoch of data.
     Args:
       sess: The session in which the model has been trained.
-      eval_correct: The Tensor that returns the number of correct predictions.
+      forward_op: The forward operation.
       images_placeholder: The images placeholder.
       labels_placeholder: The labels placeholder.
-      data_set: The set of images and labels to evaluate, from
-        input_data.read_data_sets().
+      data_set: The set of images and labels to evaluate.
     """
     x, y = data_set
 
@@ -81,11 +80,17 @@ def do_eval(sess,
     true_count = 0  # Counts the number of correct predictions.
     steps_per_epoch = x.shape[0] // FLAGS.batch_size
     num_examples = steps_per_epoch * FLAGS.batch_size
+
     for step in range(steps_per_epoch):
         feed_dict = fill_feed_dict(data_set,
                                    images_placeholder,
                                    labels_placeholder)
-        true_count += sess.run(eval_correct, feed_dict=feed_dict)
+        logits = sess.run(forward_op, feed_dict=feed_dict)
+        predicted_labels = np.argmax(logits, axis=1)
+
+        true_labels = feed_dict[labels_placeholder]
+        true_count += np.sum(true_labels[range(true_labels.shape[0]), predicted_labels])
+
     precision = true_count / num_examples
     print('  Num examples: %d  Num correct: %d  Precision @ 1: %0.04f' %
           (num_examples, true_count, precision))
@@ -102,16 +107,13 @@ def run_training():
         images_placeholder, labels_placeholder = net.get_input_placeholders(FLAGS.batch_size)
 
         # Build a Graph that computes predictions from the inference model.
-        logits = net.inference(images_placeholder)
+        forward_op = net.forward(images_placeholder)
 
         # Add to the Graph the Ops for loss calculation.
-        loss = net.loss(logits, labels_placeholder)
+        loss = net.loss(forward_op, labels_placeholder)
 
         # Add to the Graph the Ops that calculate and apply gradients.
         train_op = net.training(loss, FLAGS.learning_rate)
-
-        # Add the Op to compare the logits to the labels during evaluation.
-        eval_correct = net.evaluation(logits, labels_placeholder)
 
         # Build the summary operation based on the TF collection of Summaries.
         summary_op = tf.merge_all_summaries()
@@ -162,14 +164,14 @@ def run_training():
                 # Evaluate against the training set.
                 print('Training Data Eval:')
                 do_eval(sess,
-                        eval_correct,
+                        forward_op,
                         images_placeholder,
                         labels_placeholder,
                         data['train'])
                 # Evaluate against the validation set.
                 print('Validation Data Eval:')
                 do_eval(sess,
-                        eval_correct,
+                        forward_op,
                         images_placeholder,
                         labels_placeholder,
                         data['validation'])
