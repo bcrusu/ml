@@ -4,10 +4,17 @@ import numpy as np
 import datasets
 import nets
 
+# Basic model parameters as external flags.
+flags = tf.app.flags
+FLAGS = flags.FLAGS
+flags.DEFINE_float('learning_rate', 0.0004, 'Initial learning rate.')
+flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
+flags.DEFINE_integer('batch_size', 100, 'Batch size.')
+flags.DEFINE_string('train_dir', 'work/tf/train', 'Directory to put the training data.')
+
 
 def load_mnist_dataset():
     x_train_all, y_train_all = datasets.load_mnist_train(labels_encoding='one-hot')
-    x_test = datasets.load_mnist_test()
 
     num_training = int(x_train_all.shape[0] * 0.8)  # 20% for validation
 
@@ -19,20 +26,8 @@ def load_mnist_dataset():
     # Package data into a dictionary
     return {
         'train': (x_train, y_train),
-        'validation': (x_val, y_val),
-        'test': x_test
+        'validation': (x_val, y_val)
     }
-
-
-# Basic model parameters as external flags.
-flags = tf.app.flags
-FLAGS = flags.FLAGS
-flags.DEFINE_float('learning_rate', 0.0004, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
-flags.DEFINE_integer('batch_size', 100, 'Batch size.')
-flags.DEFINE_string('train_dir', 'tf_work/train', 'Directory to put the training data.')
-
-data = load_mnist_dataset()
 
 
 def fill_feed_dict(data_set, images_pl, labels_pl):
@@ -91,6 +86,8 @@ def do_eval(sess, forward, images_placeholder, labels_placeholder, data_set):
 
 
 def run_training():
+    data = load_mnist_dataset()
+
     with tf.Graph().as_default():
         net = nets.get_two_layer_net(200)
         placeholders, scores, loss, train = net.build_graph(FLAGS.batch_size, FLAGS.learning_rate)

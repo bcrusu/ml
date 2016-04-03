@@ -100,7 +100,7 @@ class TwoLayerNet:
 
         return images_placeholder, labels_placeholder
 
-    def build_graph(self, batch_size, learning_rate):
+    def build_graph(self, batch_size, learning_rate=1e-5):
         images_placeholder, labels_placeholder = self._create_input_placeholders(batch_size)
 
         scores = self._create_scores_tensor(images_placeholder)
