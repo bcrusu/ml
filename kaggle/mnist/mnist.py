@@ -27,7 +27,7 @@ def load_mnist_dataset():
 # Basic model parameters as external flags.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_float('learning_rate', 0.005, 'Initial learning rate.')
+flags.DEFINE_float('learning_rate', 0.0004, 'Initial learning rate.')
 flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('batch_size', 100, 'Batch size.')
 flags.DEFINE_string('train_dir', 'tf_work/train', 'Directory to put the training data.')
