@@ -1,16 +1,3 @@
-"""Builds the MNIST network.
-
-Implements the inference/loss/training pattern for model building.
-
-1. inference() - Builds the model as far as is required for running the network
-forward to make predictions.
-2. loss() - Adds to the inference model the layers required to generate loss.
-3. training() - Adds to the loss model the Ops required to generate and
-apply gradients.
-
-This file is used by the various "fully_connected_*.py" files and not meant to
-be run.
-"""
 import math
 import tensorflow as tf
 
@@ -29,7 +16,7 @@ class TwoLayerNet:
         self.hidden_size = hidden_size
         self.output_size = output_size
 
-    def forward(self, images):
+    def _create_scores_tensor(self, images):
         """Forward operation
         :param images: input placeholder
         :return: output logits tensor
@@ -56,7 +43,7 @@ class TwoLayerNet:
 
         return output
 
-    def loss(self, logits, labels):
+    def _create_loss_tensor(self, scores, labels):
         """Calculates the loss from the logits and the labels.
         Args:
           logits: Logits tensor, float32 - [batch_size, NUM_CLASSES].
@@ -64,11 +51,11 @@ class TwoLayerNet:
         Returns:
           loss: Loss tensor of type float.
         """
-        cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits, labels, name='xentropy')
+        cross_entropy = tf.nn.softmax_cross_entropy_with_logits(scores, labels, name='xentropy')
         loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
         return loss
 
-    def training(self, loss, learning_rate):
+    def _create_train_op(self, loss, learning_rate):
         """Sets up the training Ops.
 
         Creates a summarizer to track the loss over time in TensorBoard.
@@ -100,7 +87,7 @@ class TwoLayerNet:
 
         return train_op
 
-    def get_input_placeholders(self, batch_size):
+    def _create_input_placeholders(self, batch_size):
         """Generate placeholder variables to represent the input tensors.
         Args:
           batch_size: The batch size will be baked into both placeholders.
@@ -112,3 +99,12 @@ class TwoLayerNet:
         labels_placeholder = tf.placeholder(tf.float32, shape=(batch_size, self.output_size))
 
         return images_placeholder, labels_placeholder
+
+    def build_graph(self, batch_size, learning_rate):
+        images_placeholder, labels_placeholder = self._create_input_placeholders(batch_size)
+
+        scores = self._create_scores_tensor(images_placeholder)
+        loss = self._create_loss_tensor(scores, labels_placeholder)
+        train = self._create_train_op(loss, learning_rate)
+
+        return (images_placeholder, labels_placeholder), scores, loss, train

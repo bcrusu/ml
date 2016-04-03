@@ -27,7 +27,7 @@ def load_mnist_dataset():
 # Basic model parameters as external flags.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
+flags.DEFINE_float('learning_rate', 0.005, 'Initial learning rate.')
 flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('batch_size', 100, 'Batch size.')
 flags.DEFINE_string('train_dir', 'tf_work/train', 'Directory to put the training data.')
@@ -61,15 +61,11 @@ def fill_feed_dict(data_set, images_pl, labels_pl):
     return feed_dict
 
 
-def do_eval(sess,
-            forward_op,
-            images_placeholder,
-            labels_placeholder,
-            data_set):
+def do_eval(sess, forward, images_placeholder, labels_placeholder, data_set):
     """Runs one evaluation against the full epoch of data.
     Args:
       sess: The session in which the model has been trained.
-      forward_op: The forward operation.
+      forward: The forward operation.
       images_placeholder: The images placeholder.
       labels_placeholder: The labels placeholder.
       data_set: The set of images and labels to evaluate.
@@ -82,99 +78,61 @@ def do_eval(sess,
     num_examples = steps_per_epoch * FLAGS.batch_size
 
     for step in range(steps_per_epoch):
-        feed_dict = fill_feed_dict(data_set,
-                                   images_placeholder,
-                                   labels_placeholder)
-        logits = sess.run(forward_op, feed_dict=feed_dict)
-        predicted_labels = np.argmax(logits, axis=1)
+        feed_dict = fill_feed_dict(data_set, images_placeholder, labels_placeholder)
+
+        scores = sess.run(forward, feed_dict=feed_dict)
+        predicted_labels = np.argmax(scores, axis=1)
 
         true_labels = feed_dict[labels_placeholder]
         true_count += np.sum(true_labels[range(true_labels.shape[0]), predicted_labels])
 
     precision = true_count / num_examples
-    print('  Num examples: %d  Num correct: %d  Precision @ 1: %0.04f' %
-          (num_examples, true_count, precision))
+    print('  Num examples: %d  Num correct: %d  Precision @ 1: %0.04f' % (num_examples, true_count, precision))
 
 
 def run_training():
-    print('run_training...')
-
-    # Tell TensorFlow that the model will be built into the default Graph.
     with tf.Graph().as_default():
-        net = nets.get_two_layer_net(100)
+        net = nets.get_two_layer_net(200)
+        placeholders, scores, loss, train = net.build_graph(FLAGS.batch_size, FLAGS.learning_rate)
+        images_placeholder, labels_placeholder = placeholders
 
-        # Generate placeholders for the images and labels.
-        images_placeholder, labels_placeholder = net.get_input_placeholders(FLAGS.batch_size)
-
-        # Build a Graph that computes predictions from the inference model.
-        forward_op = net.forward(images_placeholder)
-
-        # Add to the Graph the Ops for loss calculation.
-        loss = net.loss(forward_op, labels_placeholder)
-
-        # Add to the Graph the Ops that calculate and apply gradients.
-        train_op = net.training(loss, FLAGS.learning_rate)
-
-        # Build the summary operation based on the TF collection of Summaries.
-        summary_op = tf.merge_all_summaries()
-
-        # Create a saver for writing training checkpoints.
+        summary = tf.merge_all_summaries()
         saver = tf.train.Saver()
 
-        # Create a session for running Ops on the Graph.
-        sess = tf.Session()
-
-        # Run the Op to initialize the variables.
+        session = tf.Session()
         init = tf.initialize_all_variables()
-        sess.run(init)
+        session.run(init)
 
-        # Instantiate a SummaryWriter to output summaries and the Graph.
-        summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, graph_def=sess.graph_def)
+        summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, graph_def=session.graph_def)
 
-        # And then after everything is built, start the training loop.
+        # Start the training loop.
         for step in range(FLAGS.max_steps):
             start_time = time.time()
 
-            # Fill a feed dictionary with the actual set of images and labels
-            # for this particular training step.
-            feed_dict = fill_feed_dict(data['train'],
-                                       images_placeholder,
-                                       labels_placeholder)
+            # Fill a feed dictionary with an train images and labels batch
+            feed_dict = fill_feed_dict(data['train'], images_placeholder, labels_placeholder)
 
-            # Run one step of the model.  The return values are the activations
-            # from the `train_op` (which is discarded) and the `loss` Op.  To
-            # inspect the values of your Ops or variables, you may include them
-            # in the list passed to sess.run() and the value tensors will be
-            # returned in the tuple from the call.
-            _, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
+            # Run one forward and backward pass steps of the model.
+            _, loss_value = session.run([train, loss], feed_dict=feed_dict)
 
             duration = time.time() - start_time
 
-            # Write the summaries and print an overview fairly often.
+            # Write the summaries and print an loss overview.
             if step % 100 == 0:
-                # Print status to stdout.
                 print('Step %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
-                # Update the events file.
-                summary_str = sess.run(summary_op, feed_dict=feed_dict)
+
+                summary_str = session.run(summary, feed_dict=feed_dict)
                 summary_writer.add_summary(summary_str, step)
 
             # Save a checkpoint and evaluate the model periodically.
             if (step + 1) % 1000 == 0 or (step + 1) == FLAGS.max_steps:
-                saver.save(sess, FLAGS.train_dir, global_step=step)
-                # Evaluate against the training set.
+                saver.save(session, FLAGS.train_dir, global_step=step)
+
                 print('Training Data Eval:')
-                do_eval(sess,
-                        forward_op,
-                        images_placeholder,
-                        labels_placeholder,
-                        data['train'])
-                # Evaluate against the validation set.
+                do_eval(session, scores, images_placeholder, labels_placeholder, data['train'])
+
                 print('Validation Data Eval:')
-                do_eval(sess,
-                        forward_op,
-                        images_placeholder,
-                        labels_placeholder,
-                        data['validation'])
+                do_eval(session, scores, images_placeholder, labels_placeholder, data['validation'])
 
 
 def main(_):
