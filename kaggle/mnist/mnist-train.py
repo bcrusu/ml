@@ -7,7 +7,7 @@ import nets
 # Basic model parameters as external flags.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_float('learning_rate', 0.0004, 'Initial learning rate.')
+flags.DEFINE_float('learning_rate', 1e-4, 'Initial learning rate.')
 flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
 flags.DEFINE_integer('batch_size', 100, 'Batch size.')
 flags.DEFINE_string('train_dir', 'work/tf/train', 'Directory to put the training data.')
@@ -89,7 +89,7 @@ def run_training():
     data = load_mnist_dataset()
 
     with tf.Graph().as_default():
-        net = nets.get_two_layer_net(200)
+        net = nets.get_two_layer_conv_net()
         placeholders, scores, loss, train = net.build_graph(FLAGS.batch_size, FLAGS.learning_rate)
         images_placeholder, labels_placeholder = placeholders
 

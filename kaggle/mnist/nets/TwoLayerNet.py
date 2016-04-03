@@ -7,10 +7,9 @@ class TwoLayerNet:
      input - hidden layer - ReLU - output layer - softmax
     """
 
-    def __init__(self, input_size, hidden_size, output_size, std=1e-4):
+    def __init__(self, input_size, hidden_size, output_size):
         """
         :param hidden_size: the size of hidden layer
-        :param std: standard deviation used to initialize the weights
         """
         self.input_size = input_size
         self.hidden_size = hidden_size
