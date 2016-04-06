@@ -1,4 +1,4 @@
-﻿RootDir=".."
+﻿RootDir="."
 
 DataDir="$RootDir$/datasets"
 OutputDir = "$RootDir$/work"
@@ -6,7 +6,7 @@ OutputDir = "$RootDir$/work"
 command = Train
 
 deviceId = -1  # run on CPU
-imageLayout = "HWC"
+imageLayout = "cudnn"
 precision = "float"
 ndlMacros = "$RootDir$/Macros.ndl"
 
