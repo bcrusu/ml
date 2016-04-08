@@ -1,16 +1,19 @@
 import os
 import numpy as np
+import mxnet as mx
 import datasets
-import nets
 
 batch_size = 100
-checkpoint_dir = 'work'
+load_model_prefix = 'work/model'
+load_epoch = 15  # saved epoch train parameters to load
 submission_out_dir = 'work'
 
 
 def load_mnist_dataset():
     x_test = datasets.load_mnist_test()
-    return x_test
+    test_iter = mx.io.NDArrayIter(data=x_test, batch_size=batch_size, shuffle=False)
+
+    return test_iter
 
 
 def save_predicted_labels(predicted_labels):
@@ -25,13 +28,13 @@ def save_predicted_labels(predicted_labels):
 
 
 def run_test():
-    test_data = load_mnist_dataset()
-    test_data_count = test_data.shape[0]
-    predicted_labels = np.zeros(test_data_count)
+    test_iter = load_mnist_dataset()
 
-    # TODO: run model on test data
+    model = mx.model.FeedForward.load(load_model_prefix, load_epoch, ctx=mx.cpu())
+    y_predicted_onehot = model.predict(test_iter)
+    y_predicted = np.argmax(y_predicted_onehot, axis=1)
 
-    save_predicted_labels(predicted_labels)
+    save_predicted_labels(y_predicted)
 
 
 if __name__ == '__main__':

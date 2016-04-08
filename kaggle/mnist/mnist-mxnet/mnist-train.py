@@ -7,7 +7,6 @@ learning_rate = 5e-4  # initial learning rate
 batch_size = 100
 num_epochs = 15
 save_model_prefix = 'work/model'
-log_file = 'work/log/train.log'
 
 
 def load_mnist_dataset():
@@ -43,7 +42,6 @@ def run_training():
     lr_factor = 0.9
     lr_factor_epoch = 1
     lr_scheduler = mx.lr_scheduler.FactorScheduler(step=max(int(epoch_size * lr_factor_epoch), 1), factor=lr_factor)
-    # SGD for 1st test - later will switch to Adam
     optimizer = mx.optimizer.Adam(learning_rate=learning_rate, wd=0.00001, lr_scheduler=lr_scheduler)
 
     # He init style
