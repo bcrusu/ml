@@ -5,15 +5,8 @@ import datasets
 
 batch_size = 100
 load_model_prefix = 'work/model'
-load_epoch = 15  # saved epoch train parameters to load
+load_epoch = 3  # saved epoch train parameters to load
 submission_out_dir = 'work'
-
-
-def load_mnist_dataset():
-    x_test = datasets.load_mnist_test()
-    test_iter = mx.io.NDArrayIter(data=x_test, batch_size=batch_size, shuffle=False)
-
-    return test_iter
 
 
 def save_predicted_labels(predicted_labels):
@@ -27,8 +20,8 @@ def save_predicted_labels(predicted_labels):
                comments='', fmt='%d')
 
 
-def run_test():
-    test_iter = load_mnist_dataset()
+def save_submission_result():
+    test_iter = datasets.load_test_dataset(batch_size, flat=False)
 
     model = mx.model.FeedForward.load(load_model_prefix, load_epoch, ctx=mx.cpu())
     y_predicted_onehot = model.predict(test_iter)
@@ -37,5 +30,17 @@ def run_test():
     save_predicted_labels(y_predicted)
 
 
+def run_validation():
+    train_iter = datasets.load_train_dataset(batch_size, flat=False, split=False)
+    true_labels = train_iter.label[0][1]
+
+    model = mx.model.FeedForward.load(load_model_prefix, load_epoch, ctx=mx.cpu())
+    predicted_labels_onehot = model.predict(train_iter)
+    predicted_labels = np.argmax(predicted_labels_onehot, axis=1)
+
+    accuracy = np.mean(predicted_labels == true_labels)
+    print('Accuracy on entire train dataset: %f' % accuracy)
+
 if __name__ == '__main__':
-    run_test()
+    # save_submission_result()
+    run_validation()

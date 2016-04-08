@@ -1,7 +1,4 @@
-IMAGE_SIZE = 28  # MNIST images size is 28x28 pixels
-
-INPUT_SIZE = IMAGE_SIZE * IMAGE_SIZE
-NUM_CLASSES = 10  # each MINST image represents a digit
+from datasets import IMAGE_SIZE, INPUT_SIZE, NUM_CLASSES
 
 
 def get_two_layer_net(hidden_size):
@@ -10,6 +7,5 @@ def get_two_layer_net(hidden_size):
 
 
 def get_two_layer_conv_net():
-    pass
-    # from nets.TwoLayerConvNet import TwoLayerConvNet
-    # return TwoLayerConvNet(IMAGE_SIZE, NUM_CLASSES)
+    from nets.TwoLayerConvNet import TwoLayerConvNet
+    return TwoLayerConvNet(IMAGE_SIZE, NUM_CLASSES)
