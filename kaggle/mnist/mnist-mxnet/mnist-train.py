@@ -16,12 +16,12 @@ def setup_logging():
 
 def run_training():
     # load MNIST data as NDArray iterators
-    train_iter, val_iter, num_train = datasets.load_train_dataset(batch_size, flat=False, split=True)
+    train_iter, val_iter = datasets.load_train_dataset(batch_size, flat=False, split=True)
 
     # create net
     network = nets.get_two_layer_conv_net()
 
-    epoch_size = num_train / batch_size
+    epoch_size = train_iter.data[0][1].shape(0) / batch_size
 
     lr_factor = 0.85
     lr_factor_epoch = 1

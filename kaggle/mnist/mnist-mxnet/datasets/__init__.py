@@ -64,7 +64,7 @@ def load_train_dataset(batch_size, flat=True, split=True, validation_ratio=0.2):
 
     train_iter = mx.io.NDArrayIter(data=x_train, label=y_train, batch_size=batch_size, shuffle=False)
     val_iter = mx.io.NDArrayIter(data=x_val, label=y_val, batch_size=batch_size, shuffle=False)
-    return train_iter, val_iter, x_train.shape[0]
+    return train_iter, val_iter
 
 
 def load_test_dataset(batch_size, flat=True):
