@@ -18,7 +18,7 @@ def create_iterator_for_label(x_train_all, y_train_all, label):
     x_train_nonlabel = x_train_all[nonlabel_mask]
 
     x_train_all = np.vstack((x_train_label, x_train_nonlabel))
-    y_train_all = np.hstack((np.ones(x_train_label.shape[0]), np.full(x_train_nonlabel.shape[0], -1)))
+    y_train_all = np.hstack((np.ones(x_train_label.shape[0]), np.zeros(x_train_nonlabel.shape[0])))
 
     all_iter = mx.io.NDArrayIter(data=x_train_all, label=y_train_all, batch_size=batch_size, shuffle=True)
     return all_iter
