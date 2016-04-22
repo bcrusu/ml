@@ -3,7 +3,7 @@ import mxnet as mx
 
 class TwoLayerNet:
     """ Two layer fully-connected net. Architecture:
-     input - hidden layer - ReLU - output layer - regression
+     input - hidden layer - batch_norm - ReLU - dropout - output layer - regression
     """
 
     def __init__(self, input_size, hidden_size, output_size, dropout_pct=0.5):

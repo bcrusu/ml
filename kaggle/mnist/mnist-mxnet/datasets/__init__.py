@@ -2,10 +2,11 @@ import os
 import pandas as pd
 import numpy as np
 import mxnet as mx
+import scipy.misc
 
-IMAGE_SIZE = 28  # MNIST images size is 28x28 pixels
-INPUT_SIZE = IMAGE_SIZE * IMAGE_SIZE
 NUM_CLASSES = 10  # each MINST image represents a digit
+
+_original_image_size = 28
 
 
 def _get_file_dir():
@@ -45,11 +46,27 @@ def _load_train_csv(labels_encoding='original'):
     return x, y_encoded
 
 
-def load_train_dataset(batch_size, flat=True, split=True, validation_ratio=0.2):
+def _resize_images(images, resize_ratio):
+    results = []
+    for image in images:
+        image_2d = image.reshape((_original_image_size, _original_image_size))
+        image_sized = scipy.misc.imresize(image_2d, resize_ratio, interp='bilinear')
+        results.append(image_sized.reshape(-1))
+
+    return np.vstack(results)
+
+
+def load_train_dataset(batch_size, flat=True, split=True, validation_ratio=0.2,
+                       resize=False, resize_ratio=0.5):
     x_train_all, y_train_all = _load_train_csv()
+    image_size = _original_image_size
+
+    if resize:
+        x_train_all = _resize_images(x_train_all, resize_ratio)
+        image_size = int(image_size * resize_ratio)
 
     if not flat:
-        x_train_all = x_train_all.reshape(x_train_all.shape[0], 1, IMAGE_SIZE, IMAGE_SIZE)
+        x_train_all = x_train_all.reshape((x_train_all.shape[0], 1, image_size, image_size))
 
     if not split:
         train_iter = mx.io.NDArrayIter(data=x_train_all, label=y_train_all, batch_size=batch_size, shuffle=False)
@@ -67,11 +84,16 @@ def load_train_dataset(batch_size, flat=True, split=True, validation_ratio=0.2):
     return train_iter, val_iter
 
 
-def load_test_dataset(batch_size, flat=True):
+def load_test_dataset(batch_size, flat=True, resize=False, resize_ratio=0.5):
     x_test = _load_test_csv()
+    image_size = _original_image_size
+
+    if resize:
+        x_test = _resize_images(x_test, resize_ratio)
+        image_size = int(image_size * resize_ratio)
 
     if not flat:
-        x_test = x_test.reshape(x_test.shape[0], 1, IMAGE_SIZE, IMAGE_SIZE)
+        x_test = x_test.reshape(x_test.shape[0], 1, image_size, image_size)
 
     test_iter = mx.io.NDArrayIter(data=x_test, batch_size=batch_size, shuffle=False)
     return test_iter

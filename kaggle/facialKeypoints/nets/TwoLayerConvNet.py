@@ -6,7 +6,8 @@ class TwoLayerConvNet:
      input - (conv - batch_norm - relu - dropout - 2x2 max pool) x2 - fc1 - batch_norm - relu - dropout - fc2 - softmax
     """
 
-    def __init__(self, output_size, dropout_pct=0.25):
+    def __init__(self, image_size, output_size, dropout_pct=0.25):
+        self.image_size = image_size
         self.output_size = output_size
         self.dropout_pct = dropout_pct
 
@@ -30,13 +31,20 @@ class TwoLayerConvNet:
         flatten = mx.symbol.Flatten(data=pool2)
 
         # first full-connected layer
-        fc1 = mx.symbol.FullyConnected(data=flatten, num_hidden=1024)
+        fc1 = mx.symbol.FullyConnected(data=flatten, num_hidden=256)
         bn3 = mx.symbol.BatchNorm(data=fc1)
         relu3 = mx.symbol.Activation(data=bn3, act_type="relu")
         dropout3 = mx.symbol.Dropout(data=relu3, p=self.dropout_pct)
 
         # second full-connected layer
-        fc2 = mx.symbol.FullyConnected(data=dropout3, num_hidden=self.output_size)
+        fc2 = mx.symbol.FullyConnected(data=dropout3, num_hidden=128)
+        bn4 = mx.symbol.BatchNorm(data=fc2)
+        relu4 = mx.symbol.Activation(data=bn4, act_type="relu")
+        dropout4 = mx.symbol.Dropout(data=relu4, p=self.dropout_pct)
 
-        softmax = mx.symbol.SoftmaxOutput(data=fc2, name='softmax')
-        return softmax
+        # third full-connected layer
+        fc2 = mx.symbol.FullyConnected(data=dropout4, num_hidden=self.output_size)
+
+        # TODO: change name - temporary workaround for mx.io.NDArrayIter limitation
+        output = mx.symbol.LinearRegressionOutput(data=fc2, name='softmax')
+        return output

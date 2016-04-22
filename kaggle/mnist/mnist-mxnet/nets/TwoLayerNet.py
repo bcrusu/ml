@@ -6,11 +6,11 @@ class TwoLayerNet:
      input - hidden layer - ReLU - output layer - softmax
     """
 
-    def __init__(self, input_size, hidden_size, output_size, dropout_pct=0.5):
+    def __init__(self, hidden_size, output_size, dropout_pct=0.5):
         """
         :param hidden_size: the size of hidden layer
         """
-        self.input_size = input_size
+
         self.hidden_size = hidden_size
         self.output_size = output_size
         self.dropout_pct = dropout_pct

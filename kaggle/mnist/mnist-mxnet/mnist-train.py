@@ -5,7 +5,7 @@ import mxnet as mx
 
 learning_rate = 5e-4  # initial learning rate
 batch_size = 100
-num_epochs = 3
+num_epochs = 5
 save_model_prefix = 'work/model'
 
 
@@ -16,7 +16,8 @@ def setup_logging():
 
 def run_training():
     # load MNIST data as NDArray iterators
-    train_iter, val_iter = datasets.load_train_dataset(batch_size, flat=False, split=True)
+    train_iter, val_iter = datasets.load_train_dataset(batch_size, flat=False, split=True,
+                                                       resize=True, resize_ratio=0.75)
 
     # create net
     network = nets.get_two_layer_conv_net()

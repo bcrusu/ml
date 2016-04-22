@@ -3,8 +3,8 @@ import datasets
 import nets
 import mxnet as mx
 
-learning_rate = 5e-3  # initial learning rate
-batch_size = 100
+learning_rate = 7e-3  # initial learning rate
+batch_size = 75
 num_epochs = 5
 save_model_prefix = 'work/model-f%0.2d'
 
@@ -15,10 +15,10 @@ def setup_logging():
 
 
 def run_training_for_feature(feature_no):
-    train_iter, val_iter = datasets.load_train_dataset(batch_size, feature_no=feature_no, flat=True, split=True)
+    train_iter, val_iter = datasets.load_train_dataset(batch_size, feature_no=feature_no, flat=False, split=True)
 
     # create net
-    network = nets.get_two_layer_fc_net(1024)
+    network = nets.get_two_layer_conv_net()
 
     epoch_size = train_iter.data[0][1].shape[0] / batch_size
 
@@ -54,9 +54,6 @@ def run_training():
     for feature_no in range(datasets.FEATURE_NO):
         print('Running training for feature no. %d...' % feature_no)
         run_training_for_feature(feature_no)
-
-        # TODO: remove below
-        break
 
 
 if __name__ == '__main__':
